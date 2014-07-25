@@ -27,7 +27,9 @@ function emulator(options, cb) {
     });
 
     browser.then(function (browser) {
-        return browser.get(game)
+        return browser.windowHandle().then(function (handle) {
+            return browser.setWindowSize(2000, 2000, handle);
+        }).get(game)
         .then(function () {
 
 
@@ -50,7 +52,7 @@ function emulator(options, cb) {
                 return new Q();
             })
             .takeScreenshot().then(function (screen) {
-                console.log('screen ', screen);
+                // console.log('screen ', screen);
                 fs.writeFileSync(path.join(__dirname, options.map + '.png'), screen, 'base64');
                 return new Q();
             })
