@@ -31,6 +31,7 @@
   "dependencies": {
     "phantom-wd": "0.0.2",
     "phantomjs": "^1.9.7-15",
+    "q": "^1.0.1",
     "wd": "^0.3.4"
   }
 }
