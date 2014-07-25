@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node src/main.js",
     "lint": "eslint src/ test/ tools/",
-    "test": "mocha --recursive",
+    "test": "mocha --recursive --timeout 5000",
     "cover": "istanbul cover _mocha -- --recursive && istanbul check --statements 50 --branches 50 --functions 50 --lines 50",
     "dev": "nodemon src/main.js",
-    "watch": "mocha watch --reporter min --recursive"
+    "watch": "mocha watch --reporter min --recursive --timeout 5000"
   },
   "repository": {
     "type": "git",
