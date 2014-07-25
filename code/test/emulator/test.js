@@ -27,7 +27,7 @@ describe('Sample tests', function () {
         emulator({
             map: 1,
             ghosts: [1],
-            lambda: 1,
+            pacman: 1,
             toCompletion: true
         }, function () {
             console.log(arguments);
