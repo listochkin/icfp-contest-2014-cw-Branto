@@ -23,7 +23,20 @@ describe('Sample tests', function () {
         }, 0);
     });
 
-    it('should solve a map', function (done) {
+    it('should execute a number of steps', function (done) {
+        emulator({
+            map: 1,
+            ghosts: [1],
+            pacman: 1,
+            steps: 10
+        }, function  (error, result) {
+            assert(error == null, 'there was an error running an emulator');
+            assert('score' in result);
+            done();
+        });
+    })
+
+    it.skip('should solve a map', function (done) {
         emulator({
             map: 1,
             ghosts: [1],
