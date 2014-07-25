@@ -29,6 +29,7 @@
     "istanbul": "^0.3.0"
   },
   "dependencies": {
+    "biwascheme": "^0.6.2",
     "phantom-wd": "0.0.2",
     "phantomjs": "^1.9.7-15",
     "q": "^1.0.1",
