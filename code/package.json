@@ -27,5 +27,8 @@
     "eslint": "^0.7.4",
     "nodemon": "^1.2.1",
     "istanbul": "^0.3.0"
+  },
+  "dependencies": {
+    "wd": "^0.3.4"
   }
 }
