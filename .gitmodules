@@ -1,0 +1,3 @@
+[submodule "code/src/emulator/icfpcontest2014.github.io"]
+	path = code/src/emulator/icfpcontest2014.github.io
+	url = git@github.com:icfpcontest2014/icfpcontest2014.github.io.git
