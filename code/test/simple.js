@@ -23,4 +23,11 @@ describe('Sample tests', function () {
         var result = add(2, 3);
         assert(result === 5, 'got incorrect result');
     });
+
+    it('should test external module biwascheme', function () {
+        var BiwaScheme = require("biwascheme"); 
+        var toEval = "(+ 1 2)";
+        var result = BiwaScheme.run(toEval);
+        assert(result === 3, 'simple test : "' + toEval + '" === 3');
+    });
 });
