@@ -1,0 +1,31 @@
+{
+  "name": "cw-branto-lambda-man",
+  "version": "0.0.0",
+  "description": "cw & Branto joined together to pplay Lambda-Man",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "lint": "eslint src/ test/ tools/",
+    "test": "mocha --recursive",
+    "cover": "istanbul cover _mocha -- --recursive && istanbul check --statements 50 --branches 50 --functions 50 --lines 50",
+    "dev": "nodemon src/main.js",
+    "watch": "mocha watch --reporter min --recursive"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/listochkin/icfp-contest-2014-cw.git"
+  },
+  "author": "cw & Branto teams",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/listochkin/icfp-contest-2014-cw/issues"
+  },
+  "homepage": "https://github.com/listochkin/icfp-contest-2014-cw",
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "mocha": "^1.21.0",
+    "eslint": "^0.7.4",
+    "nodemon": "^1.2.1",
+    "istanbul": "^0.3.0"
+  }
+}
