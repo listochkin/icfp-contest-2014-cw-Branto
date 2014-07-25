@@ -35,12 +35,12 @@ function emulator(options, cb) {
 
             return browser
 
-            .elementById('lambda').type(pacman)
-            .elementById('map').type(map)
+            .elementById('lambda').clear().type(pacman)
+            .elementById('map').clear().type(map)
             .elementsByCssSelector('#ghosts textarea').then(function (ghostInputs) {
                 console.log(ghostInputs);
                 return Q.all(ghosts.map(function (ghost, index) {
-                    return ghostInputs[index].type(ghost);
+                    return ghostInputs[index].clear().type(ghost);
                 }));
             })
             .elementById('load').click()
