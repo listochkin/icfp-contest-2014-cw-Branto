@@ -17,15 +17,21 @@ describe('Sample tests', function () {
 
     it.only('should eval in emulator', function (done) {
         var s2asm = (new Scheme2asm());
-        var str2 = '(+ 1 2)';
-        console.log(s2asm.parse(str2));
 
-        var code = s2asm.parse(str2).join('\n');
+        var code = [
+            '(define (listn n) (if n (cons n (listn (- 1 n))) 0))',
+            '(listn 10)'
+        ];
+
+        var ast = code.map(s2asm.parse);
+        console.log(ast);
+        var gcc = s2asm.compile(ast).join('\n');
+        console.log(gcc);
 
         emulator({
             map: 1,
             ghosts: [1],
-            pacmanCode: code,
+            pacmanCode: gcc,
             steps: 100
         }, function (error, result) {
             console.log(result);
