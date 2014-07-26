@@ -15,7 +15,8 @@ function emulator(options, cb) {
     var ghosts = options.ghosts.map(function (ghost) {
         return fs.readFileSync(path.join(__dirname, root, 'data/ghosts/' + ghost +'.ghc'), { encoding: 'utf8' });
     });
-    var pacman = fs.readFileSync(path.join(__dirname, root, 'data/pacmans/' + options.pacman +'.gcc'), { encoding: 'utf8' });
+    var pacman = options.pacmanCode ||
+            fs.readFileSync(path.join(__dirname, root, 'data/pacmans/' + options.pacman +'.gcc'), { encoding: 'utf8' });
 
     console.log(map, ghosts, pacman);
 
