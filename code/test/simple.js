@@ -4,6 +4,8 @@ var chai = require('chai');
 chai.Assertion.includeStack = true;
 var assert = chai.assert;
 
+var BiwaScheme = require("biwascheme"); 
+
 describe('Sample tests', function () {
     it('should run a sync test', function () {
         var x = 1;
@@ -25,7 +27,6 @@ describe('Sample tests', function () {
     });
 
     it('should test external module biwascheme', function () {
-        var BiwaScheme = require("biwascheme"); 
         var toEval = "(+ 1 2)";
         var result = BiwaScheme.run(toEval);
         assert(result === 3, 'simple test : "' + toEval + '" === 3');
