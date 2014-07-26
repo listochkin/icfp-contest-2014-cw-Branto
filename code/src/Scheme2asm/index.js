@@ -76,6 +76,8 @@ function S2Asm() {
     ret.CONS    = function()            {return 'CONS';}
     ret.CAR     = function()            {return 'CAR';}
     ret.CDR     = function()            {return 'CDR';}
+    ret.CEQ     = function()            {return 'CEQ';}
+    ret.CGT     = function()            {return 'CGT';}
     ret.LDC     = function(arg1)        {return ret._1('LDC', arg1);}
     ret.LD      = function(arg1,arg2)   {return ret._2('LD', arg1, arg2);}
     ret.LDF     = function(arg1)        {return ret._1('LDF', arg1);}
@@ -135,10 +137,16 @@ function S2Asm() {
                 if (obj[1] == 'cons') {acc.push(ret.CONS());return ;}
                 if (obj[1] == 'car') {acc.push(ret.CAR());return ;}
                 if (obj[1] == 'cdr') {acc.push(ret.CDR());return ;}
+
+                // math
                 if (obj[1] == '+') {acc.push(ret.ADD());return ;}
                 if (obj[1] == '-') {acc.push(ret.SUB());return ;}
                 if (obj[1] == '*') {acc.push(ret.MUL());return ;}
-                
+
+                // logic
+                if (obj[1] == '=') {acc.push(ret.CEQ());return ;}
+                if (obj[1] == '>') {acc.push(ret.CGT());return ;}
+
                 //throw 'UNKNOWN FUNC "' + obj[1] + '" !';
                 acc.push(ret.LDF('#' + obj[1]));
                 acc.push(ret.AP(n));
