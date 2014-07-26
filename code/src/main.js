@@ -44,14 +44,14 @@ for (var i in prg)
 {
     console.log(prg[i]);
 }
-var runCompile= function(code){
+var runCompile= function(code, shiftN){
     console.log('---------------')
     var chunks = [];
     for (var k in code)
     {
         chunks.push(s2asm.parse(code[k]));
     }
-    var prg = s2asm.compile(chunks);
+    var prg = s2asm.compile(chunks, shiftN);
     for (var i in prg)
     {
         console.log(prg[i]);
@@ -63,3 +63,4 @@ var code=[  '(define (listn n) (if n (cons n (listn (- 1 n))) 0))',
             '(listn 10)'
             ];
 runCompile(code);
+runCompile(code, 1);

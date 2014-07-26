@@ -152,8 +152,9 @@ function S2Asm() {
         return acc;
     }
 
-    ret.compile = function(chunks)
+    ret.compile = function(chunks, shiftN)
     {
+        shiftN = shiftN || 0; // to start program not from 0
         var prg = {code:[], funcs:{}};
         // gather functions
         for(var k in chunks)
@@ -200,7 +201,7 @@ function S2Asm() {
                         var tok = cmd[k].substr(1).split(' ');
                         var delta = parseInt(tok[0], 10);
                         //console.log(i, delta, tok);
-                        tok[0] = i + delta;
+                        tok[0] = shiftN + i + delta;
                         cmd[k] = tok.join(' ');
                     }
                     else //function
@@ -209,7 +210,7 @@ function S2Asm() {
                         
                         var fName = tok[0];
                         //console.log(fName);
-                        tok[0] = prg.funcs[fName].start;
+                        tok[0] = shiftN + prg.funcs[fName].start;
                         cmd[k] = tok.join(' ');
                     }
                 }
