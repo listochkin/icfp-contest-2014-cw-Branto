@@ -81,6 +81,7 @@ function S2Asm() {
     ret.LDF     = function(arg1)        {return ret._1('LDF', arg1);}
     ret.RTN     = function()            {return 'RTN';}
     ret.AP      = function(arg1)        {return ret._1('AP', arg1);}
+    ret.TSEL    = function(arg1, arg2)  {return ret._2('TSEL', arg1, arg2);}
 
     ret.parse = function(str)
     {
@@ -105,6 +106,23 @@ function S2Asm() {
             }
             if (obj[0] == 'close') {walk(obj[2]); acc.push(ret.RTN()); walk(obj[3]); return;}
             if (obj[0] == 'assign-global') {acc.push(ret.FCALL(obj[1])); return;} /// PSEUDONODE
+            if (obj[0] == 'test'){
+                var kTest = acc.length;
+                acc.push(ret.TSEL('', '')); // PLACEHOLDER
+                walk(obj[1]);
+
+                acc.push(ret.LDC(0));
+                var kElse = acc.length;
+                acc.push(ret.TSEL('', '')); // PLACEHOLDER
+                walk(obj[2]);
+                
+                var kEnd = acc.length;
+                var relElse = '# +' + (kElse - kTest + 1);
+                var relEnd  = '# +' + (kEnd - kElse);
+                acc[kTest] = ret.TSEL('# +1', relElse);
+                acc[kElse] = ret.TSEL(relEnd, relEnd);
+                return;
+            }
             if (obj[0] == 'halt'){return;}
             if (obj[0] == 'return'){acc.push(ret.RTN()); return;}
             if (obj[0] == 'argument'){return walk(obj[1]);}
@@ -146,7 +164,7 @@ function S2Asm() {
             //console.log(x, isFunc);
             if (isFunc)
             {
-                var proc = x.pop();
+                var proc = p;
                 var fname = proc.substr(6);
                 prg.funcs[fname] = {start: -1, idx: k, name: fname};
                 //console.log(k, fname, prg.funcs[fname]);
@@ -165,18 +183,37 @@ function S2Asm() {
             var fname = prg.funcs[n].name;
             prg.funcs[fname].start = prg.code.length;
             prg.code = prg.code.concat(chunks[k]);
+            prg.code.pop(); // remove FUNC placeholder
         }
         //
         //console.log(prg.code);
-        for (var i in prg.code)
+        for (var i = 0; i < prg.code.length; i++)
         {
             var fPtr = prg.code[i].indexOf('#');
             if (fPtr > -1)
             {
-                var cmd = prg.code[i].substr(0, fPtr);
-                var fName = prg.code[i].substr(fPtr + 1);
-                //console.log(fName);
-                prg.code[i] = cmd + '' + prg.funcs[fName].start;
+                var cmd = prg.code[i].split('#');
+                for (var k = 1; k < cmd.length; k++)
+                {
+                    if (cmd[k][0] == ' ') // relative addr
+                    {
+                        var tok = cmd[k].substr(1).split(' ');
+                        var delta = parseInt(tok[0], 10);
+                        console.log(i, delta, tok);
+                        tok[0] = i + delta;
+                        cmd[k] = tok.join(' ');
+                    }
+                    else //function
+                    {
+                        var tok = cmd[k].split(' ');
+                        
+                        var fName = tok[0];
+                        //console.log(fName);
+                        tok[0] = prg.funcs[fName].start;
+                        cmd[k] = tok.join(' ');
+                    }
+                }
+                prg.code[i] = cmd.join('');
             }
         }
         return prg.code;

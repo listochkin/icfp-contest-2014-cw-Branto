@@ -36,3 +36,11 @@ for (var i in prg)
 {
     console.log(prg[i]);
 }
+
+chunks.push(s2asm.parse('(if (z 0 0) 2 3)'));
+console.log(chunks);
+var prg = s2asm.compile(chunks);
+for (var i in prg)
+{
+    console.log(prg[i]);
+}
