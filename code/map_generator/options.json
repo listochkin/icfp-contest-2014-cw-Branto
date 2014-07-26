@@ -1,0 +1,8 @@
+{
+    "map_x" :10,
+    "map_y": 10,
+    "power_pills": 4,
+    "fruits": 4,
+    "ghosts":4,
+    "lambda_man":1
+}
