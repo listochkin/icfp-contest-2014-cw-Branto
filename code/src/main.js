@@ -63,4 +63,22 @@ var code=[  '(define (listn n) (if n (cons n (listn (- 1 n))) 0))',
             '(listn 10)'
             ];
 runCompile(code);
-runCompile(code, 1);
+
+// example program with prefix and uncomplete func-refs:
+// 1) add code with unknown fref
+code.push('(listz 5)');
+// 2) set prefix - storing two constants in stack
+var prg_prefix = ['LDC 111', 'LDC 112'];
+// 3) compile code shifted (it shows warning)
+var prg_uncomplete = runCompile(code, prg_prefix.length);
+// 4) get all parts together + add function chunk
+var prg_chunks = [prg_prefix, prg_uncomplete, s2asm.parse('(define (listz a) (+ 3 a))')];
+// 5) compile again. all must be ok
+var prg = s2asm.compile(prg_chunks);
+console.log("==============");
+for (var i in prg)
+{
+    console.log(prg[i]);
+}
+return prg;
+

@@ -208,9 +208,17 @@ function S2Asm() {
                     {
                         var tok = cmd[k].split(' ');
                         
-                        var fName = tok[0];
+                        var fName = tok[0];                        
                         //console.log(fName);
-                        tok[0] = shiftN + prg.funcs[fName].start;
+                        if (prg.funcs[fName])
+                        {
+                            tok[0] = shiftN + prg.funcs[fName].start;
+                        }
+                        else
+                        {
+                            console.log("WARNING ! unresolved ref ", fName);
+                            tok[0] = '#' + tok[0];
+                        }
                         cmd[k] = tok.join(' ');
                     }
                 }
