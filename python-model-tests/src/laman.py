@@ -1,3 +1,5 @@
+import copy
+
 WALL = 0
 EMPTY = 1
 PILL = 2
@@ -51,141 +53,159 @@ class Temporary:
     """
     Something influenced by time.
     """
-    def __init__(self):
-        self._clock = 0
+    def get_update_interval(self, world=None):
+        raise ValueError('You really need to define this')
 
-    def next_tick_in(self):
-        """
-        Redefine! How soon will be this one's next tick.
-        :return:
-        :rtype:
-        """
-        raise ValueError('Speed not defined!')
-
-    def next_self(self, ticks_passed):
+    def next_self(self, time_delta, **kwargs):
         """
         The method you need to define: what changes?
         :return: the new self
         """
         raise ValueError('What is the point of being time-dependent then?')
 
-    def tick(self, ticks_passed):
-        """
-        Return self or a clone of self in a next state.
-        """
-        if self._clock + ticks_passed > self.next_tick_in():
-            raise AssertionError('I missed my time!')
 
-        self._clock += ticks_passed
+class Loop:
+    class Entry:
+        def __init__(self, mortal, **kwargs):
+            self.mortal = mortal
+            self.ticks_till_next = mortal.get_update_interval(**kwargs)
 
-        result = self.next_self(ticks_passed)
-        if self._clock == self.next_tick_in():
-            # return self.next_self()  # actually, other self here
-            result._clock = 0
-        return result
+    def __init__(self, tracked=None):
+        self.tracked = tracked or []
+
+    def add_tracked(self, t, **kwargs):
+        self.tracked.append(Loop.Entry(t, **kwargs))
+
+    def entries(self):
+        return [e.mortal for e in self.tracked]
+
+    def next_tick_in(self):
+        return min([t.ticks_till_next for t in self.tracked])
+
+    def next_self(self, delta_time, **kwargs):
+        new_tracked = []
+        i = 0
+        for t in self.tracked:
+            if t.ticks_till_next < delta_time:
+                raise AssertionError('Poor guy missed its time: ' + str(t))
+            if t.ticks_till_next == delta_time:
+                kwargs.update(index=i)
+                new_mortal = t.mortal.next_self(delta_time, **kwargs)
+                new_tracked.append(Loop.Entry(new_mortal))
+            else:
+                e = Loop.Entry(t.mortal)
+                e.ticks_till_next = e.ticks_till_next - delta_time
+                new_tracked.append(e)
+            i += 1
+        return Loop(new_tracked)
 
 
-class Laman(Temporary):
+class Laman:
     def __init__(self, vitality, pos, direction, lives, score, world, ghosts_eaten=0):
-        super().__init__()
         self.vitality, self.pos, self.direction, self.lives, self.score = vitality, pos, direction, lives, score
         self.world = world
         self.ghosts_eaten = ghosts_eaten
-        self.is_dead = False
+        self.game_over = False
 
-    def next_self(self, delta_time, next_direction=None):
-        vitality = self.vitality
-        pos = self.pos
-        score = self.score
+    def ghost_score(self):
+        return GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
 
+    def next_self(self, delta_time, next_direction=None, world=None):
         vitality = max(self.vitality - delta_time, 0)
-        if self.next_tick_in() == delta_time:
-            pos = move_from(self.pos, self.direction)
+        pos = move_from(self.pos, self.direction)
 
-            cell = self.cell()
+        ghosts_here = [g for g in self.world.ghosts if pos == g.pos]
+        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
+        scared_ghosts = [g for g in ghosts_here if g.vitality == GHOST_FRIGHTENED]
 
-            score = self.score + cell_score(pos, self.world)
+        score = self.score + cell_score(pos, self.world)
+        for g in scared_ghosts:
+            self.score += self.ghost_score()
+            self.ghosts_eaten += 1
+            g.vitality = GHOST_INVISIBLE
 
-            ghosts_here = [g for g in self.world.ghosts if self.pos == g.pos]
-            active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
-            scared_ghosts = [g for g in ghosts_here if g.vitality == GHOST_FRIGHTENED]
+        result = Laman(vitality, pos, next_direction, self.lives, score, world)
 
-            result = Laman(vitality, pos, next_direction, self.lives, score, self.world)
+        if active_ghosts:
+            result.lives -= 1
+            if result.lives > 0:
+                result.game_over = False
+                result.pos = world.laman_start
+            if result.lives < 0:
+                raise AssertionError('Should never be here')
 
-            result.is_dead = bool(active_ghosts)
-            for g in scared_ghosts:
-                self.score += GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
-                self.ghosts_eaten += 1
+        return result
 
-            if result.is_dead:
-                result.lives -= 1
-                if result.lives > 0:
-                    result.is_dead = False
-                if result.lives < 0:
-                    raise AssertionError('Should never be here')
+    def get_update_interval(self, world=None):
+        # TODO: check if it's using correct position
+        return 137 if world.map_at(self.pos) in [PILL, POWER_PILL, FRUIT_LOCATION] else 127
 
-        return Laman(vitality, pos, next_direction, self.lives, score, self.world)
-
-    def cell(self):
-        return self.world.map_at(self.pos)
-
-    def next_tick_in(self):
-        return 137 if self.cell() in [PILL, POWER_PILL, FRUIT_LOCATION] else 127
 
 GHOST_SPEEDS = [130, 132, 134, 136]
 GHOST_FRIGHTENED_SPEEDS = [195, 198, 201, 204]
 
-class Ghost(Temporary):
+
+class Ghost:
     def __init__(self, vitality, pos, direction):
-        super().__init__()
-        self.vitality, self.pos, self.direction = vitality, pos, direction
+        self.vitality = vitality
+        self.pos = pos
+        self.direction = direction
 
     def next_self(self, delta_time):
         return Ghost(self.vitality, self.pos, self.direction)
 
-    def next_tick_in(self, index):
+    def get_update_interval(self, index):
         if self.vitality == GHOST_FRIGHTENED:
             return GHOST_FRIGHTENED_SPEEDS[index]
         return GHOST_SPEEDS[index]
 
 
-class World(Temporary):
-    def __init__(self, map, laman, ghosts, fruit_status):
-        super().__init__()
+class World:
+    def __init__(self, map, laman, ghosts, fruit_status, loop=None):
         self.fruits = fruit_status
         self.ghosts = ghosts
         self.laman = laman
         laman.world = self
         self.map = map
         self.fruit_status = fruit_status
+
         self.utc = 0
         self.level = int(len(map) * len(map[0]) / 100)
-        self.pill_count = sum(len([c for c in line if c in [PILL, POWER_PILL]]) for line in map)
+        self.pill_count = 0
+        for i in range(len(map)):
+            for j in range(len(map[0])):
+                c = map[i][j]
+                if c in [PILL, POWER_PILL]:
+                    self.pill_count += 1
+                if c == LAMAN_START:
+                    self.laman_start = (i, j)
+
+        self.time_loop = loop or Loop()
+        self.time_loop.add_tracked(laman, world=self)
+        i=1
+        for g in ghosts:
+            self.time_loop.add_tracked(g, index=i)
+            i += 1
 
     def next_tick_in(self):
-        mortals = self.ghosts + [self.laman]
-        return min([t.next_tick_in() for t in mortals])
+        return self.time_loop.next_tick_in()
 
-    def next_self(self, delta_time, laman_direction=None):
-        laman = self.laman
-        if laman.next_tick_in() == delta_time:
-            laman = self.laman.next_self(delta_time, laman_direction)
-        ghosts = [
-            g if g.next_tick_in() > delta_time else g.next_self(delta_time, i)
-            for i, g in enumerate(self.ghosts)
-        ]
-        # TODO: Wipe drugs from the map
-        # TODO: fruit
-        return World(self.map, laman, ghosts, self.fruit_status)
+    def next_self(self, delta_time, **kwargs):
+        result = World(copy.deepcopy(self.map), None, [], self.fruit_status, None)
+
+        kwargs.update(world=self)
+        next_loop = self.time_loop.next_self(delta_time, **kwargs)
+
+        entries = next_loop.entries()
+        result.laman = entries[0]
+        result.ghosts = entries[1:]
+        result.time_loop = next_loop
 
     def map_at(self, pos):
         try:
             return self.map[pos[0]][pos[1]]
         except IndexError:
             return WALL
-
-    def heuristic(self):
-        return self.laman.score
 
 
 class AI:
@@ -197,13 +217,21 @@ class AI:
         return world.map_at(move_from(world.laman.pos, direction)) != WALL
 
 
+def ai_heuristic(world, target_pos):
+    score = cell_score(target_pos, world)
+    score += world.laman.lives * 1000  # depends on how
+    if world.pill_count == 0:
+        score += 10000
+    return cell_score(target_pos, world)
+
+
 def ai_step(ai_self, world):
     # TODO: Stop by running into walls.
     new_ai = ai_self
 
     actions = [a for a in [UP, DOWN, LEFT, RIGHT] if ai_self.can_move(world, a)]
     positions = [move_from(world.laman.pos, a) for a in actions]
-    scores = [cell_score(p, world) for p in positions]
+    scores = [ai_heuristic(world, p) for p in positions]
 
     # possible_worlds = [world.next_self(world.next_tick_in(), a).heuristic() for a in actions]
 

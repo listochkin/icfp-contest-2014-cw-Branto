@@ -1,28 +1,28 @@
-import copy
 import unittest
 from laman import *
 
-__author__ = 'ubuntu'
 
-
-class TemporaryTest(unittest.TestCase):
+class LoopTest(unittest.TestCase):
 
     class TestedTemporary(Temporary):
-        def next_tick_in(self):
+        def get_update_interval(self, world=None):
             return 2
 
-        def next_self(self, delta_time):
-            return TemporaryTest.TestedTemporary()
+        def next_self(self, delta_time, **kwargs):
+            return LoopTest.TestedTemporary()
 
-    def test_tick(self):
-        t = TemporaryTest.TestedTemporary()
-        t2 = t.tick(1)
-        self.assertEqual(t, t2)
-        t2 = t.tick(1)
-        self.assertNotEqual(t, t2)
+    def test_next_self(self):
+        t = LoopTest.TestedTemporary()
+        loop = Loop()
+        loop.add_tracked(t)
+
+        loop = loop.next_self(1)
+        self.assertEqual(t, loop.tracked[0].mortal)
+        loop = loop.next_self(1)
+        self.assertNotEqual(t, loop.tracked[0].mortal)
 
         with self.assertRaises(AssertionError):
-            t2.tick(3)
+            loop.next_self(3)
 
 
 text_map_chars = {
@@ -121,7 +121,7 @@ class LamanTest(unittest.TestCase):
         ai, action = ai_step(ai, world)
         self.assertEqual(action, LEFT)
 
-    def test_ghost(self):
+    def test_run_from_ghost(self):
         world = to_world([
             '###',
             '#@L',
@@ -135,6 +135,28 @@ class LamanTest(unittest.TestCase):
             '#D#',
             'o@R',
             '# #'
+        ])
+        ai, ai_step = ai_init(world, None)
+        ai, action = ai_step(ai, world)
+        self.assertEqual(action, RIGHT)
+
+    def test_some_perspective(self):
+        world = to_world([
+            '..@. '
+        ])
+        ai, ai_step = ai_init(world, None)
+        ai, action = ai_step(ai, world)
+        self.assertEqual(action, RIGHT)
+
+        world = to_world([
+            ' .@..'
+        ])
+        ai, ai_step = ai_init(world, None)
+        ai, action = ai_step(ai, world)
+        self.assertEqual(action, LEFT)
+
+        world = to_world([
+            'R.@  '
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
