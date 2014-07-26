@@ -17,6 +17,13 @@ RIGHT = 1
 DOWN = 2
 LEFT = 3
 
+DIRECTION_NAMES = {
+    UP: 'UP',
+    RIGHT: 'RIGHT',
+    LEFT: 'LEFT',
+    DOWN: 'DOWN',
+}
+
 FRUIT_SCORES = [100,300,500,500,700,700,1000,1000,2000,2000,3000,3000,5000]
 GHOST_SCORES = [200, 400, 800, 1600]
 
@@ -33,6 +40,25 @@ def move_from(position, direction):
         return position[0]+1, position[1]
     if direction == LEFT:
         return position[0], position[1]-1
+
+
+def can_move(world, pos, direction):
+    return world.map_at(move_from(pos, direction)) != WALL
+
+
+def manhattan_distance(pos1, pos2):
+    return abs(pos1[0]-pos2[0]) + abs(pos1[1]-pos2[1])
+
+
+def direction_turns(d):
+    if d in [LEFT, RIGHT]:
+        return [UP, DOWN]
+    else:
+        return [LEFT, RIGHT]
+
+
+def direction_back(d):
+    return (d+2) % 4
 
 
 def cell_score(pos, world):
@@ -111,19 +137,33 @@ class Laman:
 
     def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
         vitality = max(self.vitality - delta_time, 0)
-        pos = move_from(self.pos, self.direction)
+        pos = move_from(self.pos, next_direction)
 
+        # FIXME: this might be an error: we're checking ghosts before they moved.
+        # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
         ghosts_here = [g for g in world.ghosts if pos == g.pos]
         active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
-        scared_ghosts = [g for g in ghosts_here if g.vitality == GHOST_FRIGHTENED]
 
+        cell = world.map_at(pos)
         score = self.score + cell_score(pos, world)
-        for g in scared_ghosts:
-            self.score += self.ghost_score()
-            self.ghosts_eaten += 1
-            g.vitality = GHOST_INVISIBLE
+
+        if cell == POWER_PILL:
+            vitality = 127 * 20
+            for g in world.ghosts:
+                g.vitality = GHOST_FRIGHTENED
+
+        if cell in [PILL, POWER_PILL]:
+            world.map[pos[0]][pos[1]] = EMPTY
+
+        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
 
         result = Laman(vitality, pos, next_direction, self.lives, score)
+
+        if self.vitality:
+            for g in ghosts_here:
+                result.score += result.ghost_score()
+                result.ghosts_eaten += 1
+                g.vitality = GHOST_INVISIBLE
 
         if active_ghosts:
             result.lives -= 1
@@ -145,18 +185,29 @@ GHOST_FRIGHTENED_SPEEDS = [195, 198, 201, 204]
 
 
 class Ghost:
-    def __init__(self, vitality, pos, direction):
+    def __init__(self, vitality, pos, direction, index):
         self.vitality = vitality
         self.pos = pos
         self.direction = direction
+        self.index = index
 
-    def next_self(self, delta_time):
-        return Ghost(self.vitality, self.pos, self.direction)
+    def next_self(self, delta_time, world=None, **kwargs):
+        turns = direction_turns(self.direction)
+        ways_to_go = [d for d in turns + [self.direction] if can_move(world, self.pos, d)]
+        if len(ways_to_go) == 0:
+            self.direction = direction_back(self.direction)
+        elif len(ways_to_go) == 1:
+            self.direction = ways_to_go[0]
+        else:
+            choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
+            self.direction = max(choices, key=lambda x: x[1]) [0]
 
-    def get_update_interval(self, index, **kwargs):
+        return Ghost(self.vitality, self.pos, self.direction, self.index)
+
+    def get_update_interval(self, **kwargs):
         if self.vitality == GHOST_FRIGHTENED:
-            return GHOST_FRIGHTENED_SPEEDS[index]
-        return GHOST_SPEEDS[index]
+            return GHOST_FRIGHTENED_SPEEDS[self.index]
+        return GHOST_SPEEDS[self.index]
 
 
 class World:
@@ -190,7 +241,7 @@ class World:
         return self.time_loop.next_tick_in()
 
     def next_self(self, delta_time, **kwargs):
-        result = World(copy.deepcopy(self.map), None, [], self.fruit_status, None)
+        result = World(copy.deepcopy(self.map), None, copy.deepcopy(self.ghosts), self.fruit_status, None)
 
         kwargs.update(world=self)
         next_loop = self.time_loop.next_self(delta_time, **kwargs)
@@ -198,7 +249,6 @@ class World:
         entries = next_loop.entries()
         result.utc = self.utc + delta_time
         result.laman = entries[0]
-        result.laman.world = result
         result.ghosts = entries[1:]
         result.time_loop = next_loop
         return result
@@ -214,9 +264,6 @@ class AI:
     def __init__(self, world, _):
         self.world = world
         self.eol = 127 * len(self.world.map) * len(self.world.map[0]) * 16
-
-    def can_move(self, world, direction):
-        return world.map_at(move_from(world.laman.pos, direction)) != WALL
 
 
 def ai_heuristic(world, target_pos):
@@ -235,7 +282,7 @@ def ai_step(ai_self, world):
     while world.next_tick_in() < world.time_loop.tracked[0].ticks_till_next:
         world = world.next_self(world.next_tick_in())
 
-    actions = [a for a in [UP, DOWN, LEFT, RIGHT] if ai_self.can_move(world, a)]
+    actions = [a for a in [UP, DOWN, LEFT, RIGHT] if can_move(world, world.laman.pos, a)]
     positions = [move_from(world.laman.pos, a) for a in actions]
     scores = [ai_heuristic(world, p) for p in positions]
 

@@ -2,27 +2,9 @@ import unittest
 from laman import *
 
 
-class LoopTest(unittest.TestCase):
-
-    class TestedTemporary(Temporary):
-        def get_update_interval(self, **kwargs):
-            return 2
-
-        def next_self(self, delta_time, **kwargs):
-            return LoopTest.TestedTemporary()
-
-    def test_next_self(self):
-        t = LoopTest.TestedTemporary()
-        loop = Loop()
-        loop.add_tracked(t)
-
-        loop = loop.next_self(1)
-        self.assertEqual(t, loop.tracked[0].mortal)
-        loop = loop.next_self(1)
-        self.assertNotEqual(t, loop.tracked[0].mortal)
-
-        with self.assertRaises(AssertionError):
-            loop.next_self(3)
+class TestCase(unittest.TestCase):
+    def assertDirectionEquals(self, expected, actual):
+        self.assertEqual(expected, actual, "{} != {}".format(DIRECTION_NAMES[expected], DIRECTION_NAMES[actual]))
 
 
 text_map_chars = {
@@ -56,13 +38,13 @@ def to_world(text_map):
                 laman_row = row
                 laman_col = col
             if c == '=' or c == 'L':
-                ghosts.append(Ghost(0, [row, col], LEFT))
+                ghosts.append(Ghost(0, (row, col,), LEFT, len(ghosts)))
             if c == 'R':
-                ghosts.append(Ghost(0, [row, col], RIGHT))
+                ghosts.append(Ghost(0, (row, col,), RIGHT, len(ghosts)))
             if c == 'U':
-                ghosts.append(Ghost(0, [row, col], UP))
+                ghosts.append(Ghost(0, (row, col,), UP, len(ghosts)))
             if c == 'D':
-                ghosts.append(Ghost(0, [row, col], DOWN))
+                ghosts.append(Ghost(0, (row, col,), DOWN, len(ghosts)))
             col += 1
         row += 1
         map.append(line)
@@ -75,89 +57,3 @@ def to_world(text_map):
     world = World(map, laman, ghosts, [])
 
     return world
-
-
-class LamanTest(unittest.TestCase):
-
-    def test_ai_init(self):
-        world = to_world([
-            '###',
-            '#.@'
-        ])
-        self.assertEqual([[0, 0, 0], [0, 2, 5]], world.map)
-        self.assertEqual(3, world.laman.lives)
-        self.assertEqual([1, 2], world.laman.pos)
-
-        ai, ai_step = ai_init(world, None)
-
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, LEFT)
-
-    def test_get_pills(self):
-        world = to_world([
-            '   ',
-            ' @ ',
-            ' . '
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, DOWN)
-
-        world = to_world([
-            '# #',
-            ' @.',
-            '# #'
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, RIGHT)
-
-        world = to_world([
-            '# #',
-            'o@.',
-            '# #'
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, LEFT)
-
-    def test_run_from_ghost(self):
-        world = to_world([
-            '###',
-            '#@L',
-            '#.#'
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, DOWN)
-
-        world = to_world([
-            '#D#',
-            'o@R',
-            '# #'
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, RIGHT)
-
-    def test_some_perspective(self):
-        world = to_world([
-            '..@. '
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, RIGHT)
-
-        world = to_world([
-            ' .@..'
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, LEFT)
-
-        world = to_world([
-            'R.@  '
-        ])
-        ai, ai_step = ai_init(world, None)
-        ai, action = ai_step(ai, world)
-        self.assertEqual(action, RIGHT)
