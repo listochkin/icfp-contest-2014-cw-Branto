@@ -22,6 +22,16 @@ text_map_chars = {
     'D': GHOST_START,
 }
 
+map_text_char = {
+    WALL: '#',
+    EMPTY: ' ',
+    PILL: '.',
+    POWER_PILL: 'o',
+    FRUIT_LOCATION: '%',
+    LAMAN_START: ' ',
+    GHOST_START: ' ',
+}
+
 
 def to_world(text_map):
     laman_row = 0
@@ -55,5 +65,16 @@ def to_world(text_map):
     fruit_status = []
 
     world = World(map, laman, ghosts, [])
-
     return world
+
+
+def to_text(world):
+    text = [
+        [map_text_char[c] for c in line]
+        for line in world.map
+    ]
+    for g in world.ghosts:
+        text[g.pos[0]][g.pos[1]] = '='
+    text[world.laman.pos[0]][world.laman.pos[1]] = '@'
+    # TODO: Fruit
+    return [''.join(line) for line in text]

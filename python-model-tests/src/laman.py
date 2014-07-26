@@ -67,7 +67,7 @@ def cell_score(pos, world):
         return 10
     if c == POWER_PILL:
         return 50
-    if c == FRUIT_LOCATION:
+    if c == FRUIT_LOCATION and world.is_fruit_on():
         if world.level > 12:
             return 5000
         else:
@@ -96,6 +96,12 @@ class Loop:
             self.mortal = mortal
             self.ticks_till_next = mortal.get_update_interval(**kwargs)
 
+        def next_entry(self, mortal, time_delta, **kwargs):
+            result = Loop.Entry(mortal, **kwargs)
+            result.ticks_till_next -= time_delta
+            assert result.ticks_till_next >= 0, "Another guy missed his time"
+            return result
+
     def __init__(self, tracked=None):
         self.tracked = tracked or []
 
@@ -108,19 +114,23 @@ class Loop:
     def next_tick_in(self):
         return min([t.ticks_till_next for t in self.tracked])
 
-    def next_self(self, delta_time, **kwargs):
+    def next_self(self, delta_time, mortal_clones=None, **kwargs):
+        """
+        :param mortal_clones: The pre-filled clones of current objects (maybe with already changed state) to use instead
+        stored, immutable copies. A hack to allow La-Man to modify "future Ghosts".
+        :type mortal_clones: list(Temporal)
+        """
         new_tracked = []
         i = 0
         for t in self.tracked:
             if t.ticks_till_next < delta_time:
                 raise AssertionError('Poor guy missed its time: ' + str(t))
+            mortal = mortal_clones[i] if mortal_clones and mortal_clones[i] else t.mortal
             if t.ticks_till_next == delta_time:
-                kwargs.update(index=i)
-                new_mortal = t.mortal.next_self(delta_time, **kwargs)
+                new_mortal = mortal.next_self(delta_time, **kwargs)
                 new_tracked.append(Loop.Entry(new_mortal, **kwargs))
             else:
-                e = Loop.Entry(t.mortal, **kwargs)
-                e.ticks_till_next = e.ticks_till_next - delta_time
+                e = t.next_entry(mortal, delta_time, **kwargs)
                 new_tracked.append(e)
             i += 1
         return Loop(new_tracked)
@@ -142,7 +152,6 @@ class Laman:
         # FIXME: this might be an error: we're checking ghosts before they moved.
         # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
         ghosts_here = [g for g in world.ghosts if pos == g.pos]
-        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
 
         cell = world.map_at(pos)
         score = self.score + cell_score(pos, world)
@@ -155,16 +164,18 @@ class Laman:
         if cell in [PILL, POWER_PILL]:
             world.map[pos[0]][pos[1]] = EMPTY
 
-        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
-
         result = Laman(vitality, pos, next_direction, self.lives, score)
 
-        if self.vitality:
+        if cell == POWER_PILL:
+            result.ghosts_eaten = 0
+
+        if result.vitality:
             for g in ghosts_here:
                 result.score += result.ghost_score()
                 result.ghosts_eaten += 1
                 g.vitality = GHOST_INVISIBLE
 
+        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
         if active_ghosts:
             result.lives -= 1
             if result.lives > 0:
@@ -202,7 +213,7 @@ class Ghost:
             choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
             self.direction = max(choices, key=lambda x: x[1]) [0]
 
-        return Ghost(self.vitality, self.pos, self.direction, self.index)
+        return Ghost(self.vitality, move_from(self.pos, self.direction), self.direction, self.index)
 
     def get_update_interval(self, **kwargs):
         if self.vitality == GHOST_FRIGHTENED:
@@ -240,10 +251,14 @@ class World:
     def next_tick_in(self):
         return self.time_loop.next_tick_in()
 
-    def next_self(self, delta_time, **kwargs):
+    def next_self(self, delta_time=None, **kwargs):
+        if not delta_time:
+            delta_time = self.next_tick_in()
+
         result = World(copy.deepcopy(self.map), None, copy.deepcopy(self.ghosts), self.fruit_status, None)
 
-        kwargs.update(world=self)
+        if 'world' not in kwargs:
+            kwargs.update(world=result, mortal_clones=[None] + result.ghosts)
         next_loop = self.time_loop.next_self(delta_time, **kwargs)
 
         entries = next_loop.entries()
@@ -258,6 +273,9 @@ class World:
             return self.map[pos[0]][pos[1]]
         except IndexError:
             return WALL
+
+    def is_fruit_on(self):
+        return 127 * 200 <= self.utc < 127 * 280 or 127 * 400 <= self.utc < 127 * 480
 
 
 class AI:
