@@ -1,5 +1,3 @@
-__author__ = 'ubuntu'
-
 WALL = 0
 EMPTY = 1
 PILL = 2
@@ -35,7 +33,8 @@ def move_from(position, direction):
         return position[0], position[1]-1
 
 
-def cell_score(c, world):
+def cell_score(pos, world):
+    c = world.map_at(pos)
     if c == PILL:
         return 10
     if c == POWER_PILL:
@@ -63,7 +62,7 @@ class Temporary:
         """
         raise ValueError('Speed not defined!')
 
-    def next_self(self):
+    def next_self(self, ticks_passed):
         """
         The method you need to define: what changes?
         :return: the new self
@@ -76,21 +75,14 @@ class Temporary:
         """
         if self._clock + ticks_passed > self.next_tick_in():
             raise AssertionError('I missed my time!')
-        self._clock += ticks_passed
-        if self._clock == self.next_tick_in():
-            return self.next_self()  # actually, other self here
-        return self
 
-    @staticmethod
-    def tick_many(mortals):
-        """
-        :param mortals:
-        :type mortals: list of Temporary
-        :return: the changed list
-        :rtype: tuple: (the changed list of tickers, time passed)
-        """
-        delta = min([t.next_tick_in() for t in mortals])
-        return [t.tick(delta) for t in mortals], delta
+        self._clock += ticks_passed
+
+        result = self.next_self(ticks_passed)
+        if self._clock == self.next_tick_in():
+            # return self.next_self()  # actually, other self here
+            result._clock = 0
+        return result
 
 
 class Laman(Temporary):
@@ -101,38 +93,38 @@ class Laman(Temporary):
         self.ghosts_eaten = ghosts_eaten
         self.is_dead = False
 
-    def tick(self, ticks_passed, next_direction=None):
-        if self.vitality:
-            self.vitality = max(self.vitality - ticks_passed, 0)
-        self.pos = move_from(self.pos, self.direction)
+    def next_self(self, delta_time, next_direction=None):
+        vitality = self.vitality
+        pos = self.pos
+        score = self.score
 
-        cell = self.cell()
+        vitality = max(self.vitality - delta_time, 0)
+        if self.next_tick_in() == delta_time:
+            pos = move_from(self.pos, self.direction)
 
-        self.score += cell_score(cell, self.world)
+            cell = self.cell()
 
-        ghosts_here = [g for g in self.world.ghosts if self.pos == g.pos]
-        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
-        scared_ghosts = [g for g in ghosts_here if g.vitality == GHOST_FRIGHTENED]
+            score = self.score + cell_score(pos, self.world)
 
-        self.is_dead = bool(active_ghosts)
-        for g in scared_ghosts:
-            self.score += GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
-            self.ghosts_eaten += 1
+            ghosts_here = [g for g in self.world.ghosts if self.pos == g.pos]
+            active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
+            scared_ghosts = [g for g in ghosts_here if g.vitality == GHOST_FRIGHTENED]
 
-        return super(Laman, self).tick(ticks_passed)
+            result = Laman(vitality, pos, next_direction, self.lives, score, self.world)
 
-    def next_self(self, next_direction=None):
-        cell = self.cell()
+            result.is_dead = bool(active_ghosts)
+            for g in scared_ghosts:
+                self.score += GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
+                self.ghosts_eaten += 1
 
-        if self.is_dead:
-            self.lives -= 1
-            if self.lives > 0:
-                self.is_dead = False
-            if self.lives < 0:
-                raise AssertionError('Should never be here')
+            if result.is_dead:
+                result.lives -= 1
+                if result.lives > 0:
+                    result.is_dead = False
+                if result.lives < 0:
+                    raise AssertionError('Should never be here')
 
-        return Laman(self.vitality, move_from(self.pos, next_direction),
-                     next_direction, self.lives, self.score, self.world)
+        return Laman(vitality, pos, next_direction, self.lives, score, self.world)
 
     def cell(self):
         return self.world.map_at(self.pos)
@@ -140,10 +132,21 @@ class Laman(Temporary):
     def next_tick_in(self):
         return 137 if self.cell() in [PILL, POWER_PILL, FRUIT_LOCATION] else 127
 
+GHOST_SPEEDS = [130, 132, 134, 136]
+GHOST_FRIGHTENED_SPEEDS = [195, 198, 201, 204]
 
-class Ghost:
+class Ghost(Temporary):
     def __init__(self, vitality, pos, direction):
+        super().__init__()
         self.vitality, self.pos, self.direction = vitality, pos, direction
+
+    def next_self(self, delta_time):
+        return Ghost(self.vitality, self.pos, self.direction)
+
+    def next_tick_in(self, index):
+        if self.vitality == GHOST_FRIGHTENED:
+            return GHOST_FRIGHTENED_SPEEDS[index]
+        return GHOST_SPEEDS[index]
 
 
 class World(Temporary):
@@ -163,13 +166,13 @@ class World(Temporary):
         mortals = self.ghosts + [self.laman]
         return min([t.next_tick_in() for t in mortals])
 
-    def next_self(self, delta_time=None, laman_direction=None):
+    def next_self(self, delta_time, laman_direction=None):
         laman = self.laman
         if laman.next_tick_in() == delta_time:
-            laman = laman.tick(delta_time, laman_direction)
+            laman = self.laman.next_self(delta_time, laman_direction)
         ghosts = [
-            g if g.next_tick_in() > delta_time else g.tick(delta_time)
-            for g in self.ghosts
+            g if g.next_tick_in() > delta_time else g.next_self(delta_time, i)
+            for i, g in enumerate(self.ghosts)
         ]
         # TODO: Wipe drugs from the map
         # TODO: fruit
@@ -197,10 +200,14 @@ class AI:
 def ai_step(ai_self, world):
     # TODO: Stop by running into walls.
     new_ai = ai_self
-    actions = [a for a in [UP, DOWN, LEFT, RIGHT] if ai_self.can_move(world, a)]
-    possible_worlds = [world.next_self(world.next_tick_in(), a).heuristic() for a in actions]
 
-    a, _ = max(zip(actions, possible_worlds), key=lambda tpl: tpl[1])
+    actions = [a for a in [UP, DOWN, LEFT, RIGHT] if ai_self.can_move(world, a)]
+    positions = [move_from(world.laman.pos, a) for a in actions]
+    scores = [cell_score(p, world) for p in positions]
+
+    # possible_worlds = [world.next_self(world.next_tick_in(), a).heuristic() for a in actions]
+
+    a, _ = max(zip(actions, scores), key=lambda tpl: tpl[1])
 
     return new_ai, a
 
