@@ -5,7 +5,7 @@ from laman import *
 class LoopTest(unittest.TestCase):
 
     class TestedTemporary(Temporary):
-        def get_update_interval(self, world=None):
+        def get_update_interval(self, **kwargs):
             return 2
 
         def next_self(self, delta_time, **kwargs):
@@ -67,7 +67,7 @@ def to_world(text_map):
         row += 1
         map.append(line)
 
-    laman = Laman(0, [laman_row, laman_col], UP, 3, 0, None)
+    laman = Laman(0, [laman_row, laman_col], UP, 3, 0)
 
     # TODO
     fruit_status = []
