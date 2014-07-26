@@ -24,8 +24,12 @@ describe('Sample tests', function () {
             '(listn 10)'
         ];
 
+        // minimal main function
+        var main_func = ['LDC 0', 'LDF 4', 'CONS', 'RTN'];
         var ast = code.map(s2asm.parse);
         console.log(ast);
+        // add main function first
+        ast.unshift(main_func);
         var gcc = s2asm.compile(ast).join('\n');
         console.log(gcc);
 
