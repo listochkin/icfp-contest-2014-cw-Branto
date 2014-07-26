@@ -11,7 +11,7 @@ class TemporaryTest(unittest.TestCase):
         def next_tick_in(self):
             return 2
 
-        def next_self(self):
+        def next_self(self, delta_time):
             return TemporaryTest.TestedTemporary()
 
     def test_tick(self):
@@ -33,7 +33,11 @@ text_map_chars = {
     '%': FRUIT_LOCATION,
     '\\': LAMAN_START,
     '@': LAMAN_START,
-    '=': GHOST_START
+    '=': GHOST_START,
+    'R': GHOST_START,
+    'L': GHOST_START,
+    'U': GHOST_START,
+    'D': GHOST_START,
 }
 
 
@@ -125,7 +129,7 @@ class LamanTest(unittest.TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertEqual(action, LEFT)
+        self.assertEqual(action, DOWN)
 
         world = to_world([
             '#D#',
