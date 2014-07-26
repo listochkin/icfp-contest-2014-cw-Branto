@@ -199,7 +199,7 @@ function S2Asm() {
                     {
                         var tok = cmd[k].substr(1).split(' ');
                         var delta = parseInt(tok[0], 10);
-                        console.log(i, delta, tok);
+                        //console.log(i, delta, tok);
                         tok[0] = i + delta;
                         cmd[k] = tok.join(' ');
                     }
