@@ -35,6 +35,7 @@ describe('Sample tests', function () {
             steps: 100
         }, function (error, result) {
             console.log(result);
+            console.log(result.trace);
             done();
         });
     });
