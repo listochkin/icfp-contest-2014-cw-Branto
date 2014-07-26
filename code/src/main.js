@@ -13,4 +13,26 @@ console.log(asm);
 var str2 = '(+ 1 2)';
 console.log(s2asm.parse(str2));
 
+var strZ = '(define (z a b) (+ a b))';
+/*
+s2asm.sampleParse(strZ);
 
+var BiwaScheme = require("biwascheme"); 
+var on_error = function(e){
+  console.log("ERROR", e.message);
+};
+
+
+var biwascheme = new BiwaScheme.Interpreter(on_error);
+var opc = biwascheme.compile(strZ);
+
+*/
+var chunks = [];
+chunks.push(s2asm.parse(strZ));
+chunks.push(s2asm.parse('(z 1 2)'));
+console.log(chunks);
+var prg = s2asm.compile(chunks);
+for (var i in prg)
+{
+    console.log(prg[i]);
+}
