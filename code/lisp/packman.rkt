@@ -41,13 +41,13 @@
 ;maximum depth for depth search
 (define max-depth 3)
 
-(define (next-move world-map point direction)
+(define (next-move world-map current-point direction)
   ((lambda (new-point) (if (= (matrix-ref world-map new-point) 0) 
-                           (list (make-move direction point)) (list (make-move direction new-point))))
-      (cond ((= direction 0) (cons (car point) (- (cdr point) 1)))
-         ((= direction 1) (cons (- (car point) 1) (cdr point)))
-         ((= direction 2) (cons (car point) (+ (cdr point) 1)))
-         ((= direction 3) (cons (+ (car point) 1) (cdr point))))
+                           (list (make-move direction current-point)) (list (make-move direction new-point))))
+      (cond ((= direction 0) (cons (car current-point) (- (cdr current-point) 1)))
+         ((= direction 1) (cons (- (car current-point) 1) (cdr current-point)))
+         ((= direction 2) (cons (car current-point) (+ (cdr current-point) 1)))
+         ((= direction 3) (cons (+ (car current-point) 1) (cdr current-point))))
    ))
 
 
@@ -55,15 +55,6 @@
   (flatmap (lambda (direction) (next-move world-map point direction))
      (list 0 1 2 3)))
 
-;pills, power pills, fruits
-(define (tick-man world-map point)
-  ((lambda (content) 
-     (cond ((= content 1) 0)
-        ((= content 2) 10)
-        ((= content 3) 50)
-        ((= content 4) 100)
-        (else 0)))
-   (matrix-ref world-map point)))
 
 
 (define (evaluate-moves world-map moves-list depth)
@@ -88,10 +79,22 @@
 (define (max-path p1 p2)
   (if (null? p2) p1 (if (> (path-score p1) (path-score p2)) p1 p2)))
 
+
+;pills, power pills, fruits
+(define (eat-cell-food world-map point)
+  ((lambda (content) 
+     (cond ((= content 1) 0)
+        ((= content 2) 10)
+        ((= content 3) 50)
+        ((= content 4) 100)
+        (else 0)))
+   (matrix-ref world-map point)))
+
+
 (define (tick-world world-map move depth)
    (if (> depth max-depth) 
        (list (make-path-node 0 move))
-       (append-path (tick-man world-map (move-point move)) 
+       (append-path (eat-cell-food world-map (move-point move)) 
                     move
           ;tick-actions
           ;(+score) tick-ghosts          
