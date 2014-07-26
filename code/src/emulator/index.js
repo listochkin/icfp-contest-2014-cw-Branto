@@ -29,7 +29,8 @@ function emulator(options, cb) {
     var result = {
         score: 0,
         lives: 0,
-        ticks: 0
+        ticks: 0,
+        trace: ''
     }
 
     browser.then(function (browser) {
@@ -72,11 +73,14 @@ function emulator(options, cb) {
                 result.ticks = parseInt(text, 10);
                 return new Q;
             })
+            .elementById('trace').text().then(function (text) {
+                result.trace = text;
+                return new Q;
+            })
             .takeScreenshot().then(function (screen) {
                 fs.writeFileSync(path.join(__dirname, options.map + '.png'), screen, 'base64');
                 return new Q();
             })
-
 
             // textarea#lambda
             // #map
