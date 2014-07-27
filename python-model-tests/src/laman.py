@@ -146,15 +146,11 @@ class Laman:
         return GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
 
     def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
-        vitality = max(self.vitality - delta_time, 0)
         pos = move_from(self.pos, next_direction)
-
-        # FIXME: this might be an error: we're checking ghosts before they moved.
-        # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
-        ghosts_here = [g for g in world.ghosts if pos == g.pos]
 
         cell = world.map_at(pos)
         score = self.score + cell_score(pos, world)
+        vitality = self.vitality
 
         if cell == POWER_PILL:
             vitality = 127 * 20
@@ -162,27 +158,14 @@ class Laman:
                 g.vitality = GHOST_FRIGHTENED
 
         if cell in [PILL, POWER_PILL]:
+            # no other reason to duplicate a map
+            world.map = copy.deepcopy(world.map)
             world.map[pos[0]][pos[1]] = EMPTY
 
         result = Laman(vitality, pos, next_direction, self.lives, score)
 
         if cell == POWER_PILL:
             result.ghosts_eaten = 0
-
-        if result.vitality:
-            for g in ghosts_here:
-                result.score += result.ghost_score()
-                result.ghosts_eaten += 1
-                g.vitality = GHOST_INVISIBLE
-
-        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
-        if active_ghosts:
-            result.lives -= 1
-            if result.lives > 0:
-                result.game_over = False
-                result.pos = world.laman_start
-            if result.lives < 0:
-                raise AssertionError('Should never be here')
 
         return result
 
@@ -243,7 +226,7 @@ class World:
         self.time_loop = loop or Loop()
         if laman:
             self.time_loop.add_tracked(laman, world=self)
-        i=1
+        i = 1
         for g in ghosts:
             self.time_loop.add_tracked(g, index=i)
             i += 1
@@ -255,7 +238,7 @@ class World:
         if not delta_time:
             delta_time = self.next_tick_in()
 
-        result = World(copy.deepcopy(self.map), None, copy.deepcopy(self.ghosts), self.fruit_status, None)
+        result = World(self.map, copy.deepcopy(self.laman), copy.deepcopy(self.ghosts), self.fruit_status, None)
 
         if 'world' not in kwargs:
             kwargs.update(world=result, mortal_clones=[None] + result.ghosts)
@@ -266,7 +249,33 @@ class World:
         result.laman = entries[0]
         result.ghosts = entries[1:]
         result.time_loop = next_loop
+
+        result.update_collisions(delta_time)
+
         return result
+
+    def update_collisions(self, delta_time):
+
+        self.laman.vitality = max(self.laman.vitality - delta_time, 0)
+
+        # FIXME: this might be an error: we're checking ghosts before they moved.
+        # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
+        ghosts_here = [g for g in self.ghosts if self.laman.pos == g.pos]
+
+        if self.laman.vitality:
+            for g in ghosts_here:
+                self.laman.score += self.laman.ghost_score()
+                self.laman.ghosts_eaten += 1
+                g.vitality = GHOST_INVISIBLE
+
+        active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
+        if active_ghosts:
+            self.laman.lives -= 1
+            if self.laman.lives > 0:
+                self.laman.game_over = False
+                self.laman.pos = self.laman_start
+            if self.laman.lives < 0:
+                raise AssertionError('Should never be here')
 
     def map_at(self, pos):
         try:

@@ -46,6 +46,7 @@ class ModelTest(TestCase):
             ],
             to_text(world2))
         self.assertEqual(10, world2.laman.score)
+        self.assertEqual(127, world2.utc)
 
         world3 = world2.next_self(next_direction=RIGHT)
         self.assertEqual(
@@ -55,6 +56,7 @@ class ModelTest(TestCase):
                 '#####'
             ],
             to_text(world3))
+        self.assertEqual(130, world3.utc)
 
         world4 = world3.next_self(next_direction=RIGHT)
         self.assertEqual(
@@ -64,6 +66,7 @@ class ModelTest(TestCase):
                 '#####'
             ],
             to_text(world4))
+        self.assertEqual(127*2, world4.utc)
         self.assertEqual(127*20, world4.laman.vitality)
         self.assertEqual(60, world4.laman.score)
 
@@ -75,9 +78,11 @@ class ModelTest(TestCase):
                 '#####'
             ],
             to_text(world5))
+        self.assertEqual(130*2, world5.utc)
 
         # FIXME! Move event triggers to World :)))
 
         self.assertEqual(260, world5.laman.score)
+        # The difference accumulated should be
         self.assertEqual(127*20-6, world5.laman.vitality)
         self.assertEqual(GHOST_INVISIBLE, world5.ghosts[0].vitality)
