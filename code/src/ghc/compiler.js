@@ -23,6 +23,7 @@ function compiler(code) {
 
     return ghc.join('\n');
 }
+
 // Register use
 // a, b, c, d .. - return variables
 // h - callstack address (starts at 0)
@@ -73,7 +74,14 @@ function codeFor (func, args) {
         return prelude[func].apply(null, args);
     } else {
         var label = callLabel(func);
-        return ['MOV [h], %' + label + '+1 ; call', 'INC h' , label + ': JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')' ]
+        var code = (args || []).map(function (arg, index) {
+            return 'MOV ' + registers[index] + ', %' + arg + (!index ? ' ; params' : '');
+        });
+        return code.concat([
+            'MOV [h], %' + label + '+1 ; call',
+            'INC h' ,
+            label + ': JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')'
+        ]);
         // throw new Error('Unimplemented: ' + func);
     }
 }
