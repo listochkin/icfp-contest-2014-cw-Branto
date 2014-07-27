@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "biwascheme": "^0.6.2",
+    "json-stringify-safe": "^5.0.0",
     "phantom-wd": "0.0.2",
     "phantomjs": "^1.9.7-15",
     "q": "^1.0.1",
