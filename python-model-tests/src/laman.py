@@ -99,8 +99,9 @@ class Loop:
 
         def next_entry(self, mortal, time_delta, **kwargs):
             result = Loop.Entry(mortal, **kwargs)
-            result.ticks_till_next -= time_delta
-            assert result.ticks_till_next >= 0, "Another guy missed his time"
+            result.ticks_till_next = self.ticks_till_next - time_delta
+            if result.ticks_till_next < 0:
+                raise AssertionError("Another guy missed his time by {}: {}".format(mortal, -result.ticks_till_next))
             return result
 
     def __init__(self, tracked=None):
@@ -144,7 +145,7 @@ class Laman:
         self.game_over = False
 
     def ghost_score(self):
-        return GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
+        return GHOST_SCORES[-1] if self.ghosts_eaten >= 4 else GHOST_SCORES[self.ghosts_eaten]
 
     def next_self(self, delta_time, next_direction=None, **kwargs):
         pos = move_from(self.pos, next_direction)
@@ -154,6 +155,9 @@ class Laman:
     def get_update_interval(self, world=None, **kwargs):
         # TODO: check if it's using correct position
         return 137 if world.map_at(self.pos) in [PILL, POWER_PILL, FRUIT_LOCATION] else 127
+
+    def __str__(self):
+        return 'Lambda-Man {}'.format(self.pos)
 
 
 GHOST_SPEEDS = [130, 132, 134, 136]
@@ -176,7 +180,12 @@ class Ghost:
             self.direction = ways_to_go[0]
         else:
             choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
-            self.direction = max(choices, key=lambda x: x[1]) [0]
+            self.direction = min(choices, key=lambda x: x[1]) [0]
+
+            # if len(choices) > 1:
+            #     choice_names = ','.join([DIRECTION_NAMES[d] for d in ways_to_go])
+            #     dname = DIRECTION_NAMES[self.direction]
+            #     print('Choice point between {}; chose {}'.format(choice_names, dname))
 
         return Ghost(self.vitality, move_from(self.pos, self.direction), self.direction, self.index)
 
@@ -184,6 +193,9 @@ class Ghost:
         if self.vitality == GHOST_FRIGHTENED:
             return GHOST_FRIGHTENED_SPEEDS[self.index]
         return GHOST_SPEEDS[self.index]
+
+    def __str__(self):
+        return 'Ghost #{} {}'.format(self.index, self.pos)
 
 
 class World:
