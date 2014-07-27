@@ -78,7 +78,7 @@ function codeFor (func, args) {
             return 'MOV ' + registers[index] + ', %' + arg + (!index ? ' ; params' : '');
         });
         return code.concat([
-            'MOV [h], %' + label + '+1 ; call',
+            'MOV [h], $' + label + '+1 ; call',
             'INC h' ,
             label + ': JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')'
         ]);
