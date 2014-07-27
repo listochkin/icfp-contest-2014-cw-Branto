@@ -62,6 +62,19 @@ def direction_back(d):
     return (d+2) % 4
 
 
+def direction_between(pos1, pos2):
+    if pos2[0]-pos1[0] > 0:
+        return DOWN
+    elif pos2[0]-pos1[0] < 0:
+        return UP
+    elif pos2[1]-pos1[1] > 0:
+        return RIGHT
+    elif pos2[1]-pos1[1] < 0:
+        return LEFT
+    else:
+        assert False, "The positions are supposed to differ by 1 step"
+
+
 def cell_score(pos, world):
     c = world.map_at(pos)
     if c == PILL:
@@ -174,11 +187,6 @@ def default_ghost_ai(world, ghost):
     else:
         choices = [(d, manhattan_distance(move_from(ghost.pos, d), world.laman.pos)) for d in ways_to_go]
         direction = min(choices, key=lambda x: x[1]) [0]
-        # if len(choices) > 1:
-        #     choice_names = ','.join([DIRECTION_NAMES[d] for d in ways_to_go])
-        #     dname = DIRECTION_NAMES[self.direction]
-        #     print('Choice point between {}; chose {}'.format(choice_names, dname))
-
     return direction
 
 

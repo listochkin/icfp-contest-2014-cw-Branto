@@ -12,7 +12,7 @@ class AiTest(TestCase):
         ])
         self.assertEqual([[0, 0, 0], [0, 2, 5]], world.map)
         self.assertEqual(3, world.laman.lives)
-        self.assertEqual([1, 2], world.laman.pos)
+        self.assertEqual((1, 2,), world.laman.pos)
 
         ai, ai_step = ai_init(world, None)
 
@@ -93,7 +93,7 @@ class AiTest(TestCase):
 class WaveTest(TestCase):
     def test_wave_distance(self):
         world = to_world([
-            '# #####',
+            '#@#####',
             '#      ',
             '# #### ',
             '# #  # ',
@@ -101,6 +101,29 @@ class WaveTest(TestCase):
             '###    ',
         ])
 
-        self.assertEqual(0, wave_distance(world, (0,1), (0,1)))
-        self.assertEqual(1, wave_distance(world, (0,1), (1,1)))
-        self.assertEqual(16, wave_distance(world, (0,1), (3,4)))
+        self.assertEqual(0, distance_from_laman(world, (0,1)))
+        self.assertEqual(1, distance_from_laman(world, (1,1)))
+        self.assertEqual(16, distance_from_laman(world, (3,4)))
+
+    def test_clusterize(self):
+        world = to_world([
+            '#.#####',
+            '#@    .',
+            '#.####.',
+            '#.#.o#.',
+            '#.#.##.',
+            '###...o',
+        ])
+
+        w = Waver(world)
+        w.clusterize(4)
+        self.assertEqual(3, len(w.clusters))
+
+        self.assertEqual((0, 1,), w.clusters[0][0].pos)
+
+        self.assertEqual(1, w.clusters[0][1])
+        self.assertEqual(UP, w.get_first_step_to(w.clusters[0][0].pos))
+        self.assertEqual(3, w.clusters[1][1])
+        self.assertEqual(DOWN, w.get_first_step_to(w.clusters[1][0].pos))
+        self.assertEqual(11, w.clusters[2][1])
+        self.assertEqual(RIGHT, w.get_first_step_to(w.clusters[2][0].pos))
