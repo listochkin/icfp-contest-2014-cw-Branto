@@ -2,31 +2,45 @@ import math
 from laman import *
 
 
+class WaverDistance:
+    def __init__(self, world, pos1):
+        self.world = world
+        self.pos1 = pos1
+        self.distances_to = {pos1: 0}
+        self.wavefront = [pos1]
+
+    def distance_to(self, pos2):
+        if pos2 in self.distances_to:
+            return self.distances_to[pos2]
+        return self._calc_distance_to(pos2)
+
+    def _calc_distance_to(self, pos2):
+        if self.pos1 == pos2:
+            return 0
+        # i = 0
+        while True:
+            next_wavefront = []
+            for p in self.wavefront:
+                for d in [UP, DOWN, LEFT, RIGHT]:
+                    if can_move(self.world, p, d):
+                        next_pos = move_from(p, d)
+                        if next_pos not in self.distances_to:
+                            # i += 1
+                            next_wavefront.append(next_pos)
+                            self.distances_to[next_pos] = self.distances_to[p]+1
+                            if next_pos == pos2:
+                                # print("Wave computed in {} steps".format(i))
+                                return self.distances_to[next_pos]
+            self.wavefront = next_wavefront
+            if not next_wavefront:
+                raise AssertionError('Could not find path from {} to {}'.format(self.pos1, pos2))
+
+
 def wave_distance(world, pos1, pos2):
     """
     Computes a labyrinth distance from pos to pos2 using A* wave.
     """
-    if pos1 == pos2:
-        return 0
-    wavefront = [pos1]
-    distances_to = {pos1: 0}
-    # i = 0
-    while True:
-        next_wavefront = []
-        for p in wavefront:
-            for d in [UP, DOWN, LEFT, RIGHT]:
-                if can_move(world, p, d):
-                    next_pos = move_from(p, d)
-                    if next_pos not in distances_to:
-                        # i += 1
-                        next_wavefront.append(next_pos)
-                        distances_to[next_pos] = distances_to[p]+1
-                        if next_pos == pos2:
-                            # print("Wave computed in {} steps".format(i))
-                            return distances_to[next_pos]
-        wavefront = next_wavefront
-        if not next_wavefront:
-            raise AssertionError('Could not find path from {} to {}'.format(pos1, pos2))
+    return WaverDistance(world, pos1).distance_to(pos2)
 
 
 class AI:
@@ -42,23 +56,21 @@ def ai_heuristic(world, target_pos):
     if world.pill_count == 0:
         score += 100000
 
-    # world_size = len(world.map) + len(world.map[0])
-
     ghost_score = 0
+    distance_to_ghost = 100
     for g in world.ghosts:
         distance = manhattan_distance(world.laman.pos, g.pos)
         if distance < 10:
             distance = wave_distance(world, world.laman.pos, g.pos)
+
+        distance_to_ghost = min(distance_to_ghost, distance)
+
         if distance == 0:
-            ghost_score += 2000
+            ghost_score += 200
         elif distance < 3:
             ghost_score += 100
         elif distance < 6:
             ghost_score += 30
-        # distance_reverse = world_size - distance
-        # h = (world_size**2 - distance_reverse**2) // 200
-        # print("Distance heuristic for {} is {}".format(manhattan_distance(world.laman.pos, g.pos), h))
-        # score += h
 
     # Let's account for 10 turns, no point to account further.
     # Let's consider the time till fright mode ends.
@@ -76,7 +88,6 @@ def ai_heuristic(world, target_pos):
 
 
 def ai_step(ai_self, world):
-    # TODO: Stop by running into walls.
     new_ai = ai_self
 
     # Rewind till the decision point
