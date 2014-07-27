@@ -15,11 +15,33 @@ def ai_heuristic(world, target_pos):
     if world.pill_count == 0:
         score += 100000
 
-    world_size = len(world.map) + len(world.map[0])
+    # world_size = len(world.map) + len(world.map[0])
 
+    ghost_score = 0
     for g in world.ghosts:
-        distance_reverse = world_size - manhattan_distance(world.laman.pos, g.pos)
-        score += distance_reverse * distance_reverse
+        distance = manhattan_distance(world.laman.pos, g.pos)
+        if distance == 0:
+            ghost_score += 2000
+        elif distance < 3:
+            ghost_score += 100
+        elif distance < 6:
+            ghost_score += 30
+        # distance_reverse = world_size - distance
+        # h = (world_size**2 - distance_reverse**2) // 200
+        # print("Distance heuristic for {} is {}".format(manhattan_distance(world.laman.pos, g.pos), h))
+        # score += h
+
+    # Let's account for 10 turns, no point to account further.
+    # Let's consider the time till fright mode ends.
+    # TODO: We're not accounting for the opportunity to EAT nearby PowerPill. Add distance to Power Pills, if there's
+    # a ghost near.
+    if world.laman.vitality > 1300:
+        # fright mode
+        score += ghost_score
+    else:
+        score -= ghost_score
+
+    # TODO: distance to fruit (including distance in time)
 
     return score
 

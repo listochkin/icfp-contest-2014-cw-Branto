@@ -22,7 +22,9 @@ class PacmanUI:
 
     def initial_draw(self):
         self.mobs_dict = {
-            ghost.index: self.w.create_text(ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE, text='G')
+            ghost.index: self.w.create_text(
+                ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE,
+                text='Ggi'[ghost.vitality])
             for ghost in self.world.ghosts
         }
         self.mobs_dict[0] = self.w.create_text(
@@ -46,12 +48,15 @@ class PacmanUI:
 
     def tick(self):
 
-        if self.world.is_decision_point():
-            ai = ai_init(self.world, [])
-            ai, action = ai_step(ai, self.world)
-            self.world = self.world.next_self(next_direction=action)
-        else:
-            self.world = self.world.next_self()
+        try:
+            if self.world.is_decision_point():
+                ai = ai_init(self.world, [])
+                ai, action = ai_step(ai, self.world)
+                self.world = self.world.next_self(next_direction=action)
+            else:
+                self.world = self.world.next_self()
+        except:
+            return
 
         # self.update_world()
         self.w.delete('all')
