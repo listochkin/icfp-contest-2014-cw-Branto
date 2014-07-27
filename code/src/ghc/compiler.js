@@ -15,13 +15,98 @@ function compiler(code) {
     });
     // lines are now clean
 
-    var ghc = lines.map(function (line, index) {
+    var llcode = lines.map(function (line, index) {
         return compileLine(line, index, variables, labels);
     });
 
-    ghc = Array.prototype.concat.apply([], ghc);
+    llcode = Array.prototype.concat.apply([], llcode);
+
+    // console.log(llcode);
+    var ghc = link(optimize(llcode));
 
     return ghc.join('\n');
+}
+
+function optimize (code) {
+    code = code.map(function (line, index, lines) {
+        var prevLine = code[index - 1];
+        if (!prevLine) return line;
+        var rP = /MOV ([^\s,]+), ([^\s]+)/.exec(prevLine);
+        var rC = /MOV ([^\s,]+), ([^\s]+)/.exec(line);
+        if (rP && rC) {
+            if (rP[1] === rC[2] && rP[2] === rC[1]) {
+                return '; optimized | ' + line + ' |';
+            }
+        }
+        return line;
+    }).map(function (line) {
+        return line.replace(/\s+/g, ' ').trim();
+    }).join('\n').replace(/\n;/g, ' ;').split('\n');
+
+    return code;
+}
+
+function link(code) {
+    // optimize
+
+    var memIndex = 255;
+    var memTable = {
+        // vars start with % in intermediate form
+    };
+    var labels = {
+        // labels start with $ when referenced in code
+    };
+
+    code = code.map(function (line) {
+        return line
+            // registers
+            .replace(/(%([a-g])(([^\w\d]+?|$)))/g, '$2$3')
+            // constants
+            .replace(/(%(\d+)(([^\w\d]+?|$)))/g, '$2$3');
+    }).map(function (line) {
+        var vars = line.match(/%(\w[\w\d]*)/g);
+
+        if (!vars) return line;
+
+        var varComment = [];
+
+        vars.map(function (v) {
+            if (!(v in memTable)) {
+                memTable[v] = memIndex--;
+            }
+            line = line.replace(v, '[' + memTable[v] + ']');
+            varComment.push(v);
+        });
+        return line + '       ;  ' + varComment.join(', ');
+    }).map(function (line, index) {
+        if (/:[^=]/.test(line)) { // labels
+            var fragments = line.split(':');
+            var label = fragments[0].trim();
+            fragments.shift();
+
+            line = fragments.join(':');
+            labels[label] = index;
+        }
+        return line;
+    }).map(function (line, index) {
+        var addressComment = [];
+        line = line.replace(/\$([\w\d-]+)(\+(\d+))?/, function (fullAddress, label, b, extra) {
+            addressComment.push(fullAddress);
+            if (extra) {
+                // we support pointer arithmetics at compile time
+                return labels[label] + parseInt(extra, 10)
+            } else {
+                return labels[label];
+            }
+        }).trim()// + '    ; <= ' + index;
+        if (addressComment.length > 0) {
+            return line + '       ;  ' + addressComment.join(', ');
+        } else {
+            return line;
+        }
+    });
+
+    return code;
 }
 
 // Register use
