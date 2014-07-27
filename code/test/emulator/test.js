@@ -4,7 +4,8 @@ var chai = require('chai');
 chai.Assertion.includeStack = true;
 var assert = chai.assert;
 
-var path = require('path');
+var path = require('path'),
+    stringify = require('json-stringify-safe');
 
 var emulator = require('../../src/emulator');
 // console.log('emulator ', emulator);
@@ -36,14 +37,19 @@ describe('Sample tests', function () {
         });
     })
 
-    it.skip('should solve a map', function (done) {
+    it('should solve a map', function (done) {
+        this.timeout(15000);
         emulator({
             map: 1,
             ghosts: [1],
             pacman: 1,
-            toCompletion: true
-        }, function () {
-            console.log(arguments);
+            interval: 2000,
+            timeout: 10000,
+            screenshots: true
+        }, function (error, result) {
+            assert(error == null, 'there was an error running an emulator');
+            assert('milestones' in result);
+            console.log(stringify(result, null, 4));
             done();
         })
     });
