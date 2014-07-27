@@ -15,22 +15,25 @@ class PacmanUI:
         self.w = Canvas(self.master, width=len(world.map[0])*CELL_SIZE, height=len(world.map)*CELL_SIZE)
         self.w.configure(background='black')
         self.w.pack()
-        self.mobs_dict = {}
+        self.mobs = []
         self.world = world
+        self.pills = {}
         self.initial_draw()
 
     def pos_to_coords(self, pos):
         return pos[1]*CELL_SIZE, pos[0]*CELL_SIZE
 
     def mktext(self, pos, text, color='white'):
-        return self.w.create_text(pos[1]*CELL_SIZE, pos[0]*CELL_SIZE, text=text, font=("Arial", 17), fill=color)
+        t = self.w.create_text(pos[1]*CELL_SIZE, pos[0]*CELL_SIZE, text=text, font=("Arial", 17), fill=color)
+        if text in ['.', 'o']:
+            self.pills[pos] = t
+        return t
 
     def initial_draw(self):
-        self.mobs_dict = {
-            ghost.index: self.mktext(ghost.pos, 'Ggi'[ghost.vitality], 'green')
+        self.mobs = [self.mktext(self.world.laman.pos, '@', 'yellow')] + [
+            self.mktext(ghost.pos, 'Ggi'[ghost.vitality], 'green')
             for ghost in self.world.ghosts
-        }
-        self.mobs_dict[0] = self.mktext(self.world.laman.pos, '@', 'yellow')
+        ]
         for r in range(len(self.world.map)):
             for c in range(len(self.world.map[0])):
                 cell = self.world.map[r][c]
@@ -44,12 +47,17 @@ class PacmanUI:
                     self.mktext((r,c,), '%', 'red')
 
     def update_world(self):
-        for i, text in self.mobs_dict.items():
+        pill = self.pills.get(self.world.laman.pos, None)
+        if pill:
+            self.w.delete(pill)
+
+        for i, text in enumerate(self.mobs):
             pos = self.world.time_loop.tracked[i].mortal.pos
             self.w.coords(text, pos[1]*CELL_SIZE, pos[0]*CELL_SIZE)
+            if i > 0:
+                self.w.itemconfig(text, text='Ggi'[self.world.ghosts[i-1].vitality])
 
     def tick(self):
-
         try:
             if self.world.is_decision_point():
                 ai = ai_init(self.world, [])
@@ -64,12 +72,11 @@ class PacmanUI:
         if self.world.laman.game_over:
             return
 
-        # self.update_world()
-        self.w.delete('all')
-        self.initial_draw()
+        self.update_world()
         self.master.after(DELAY_MS, self.tick)
 
     def run(self):
+        # self.initial_draw()
         self.master.after(DELAY_MS, self.tick)
         mainloop()
 

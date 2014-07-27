@@ -167,7 +167,6 @@ GHOST_FRIGHTENED_SPEEDS = [195, 198, 201, 204]
 def default_ghost_ai(world, ghost):
     turns = direction_turns(ghost.direction)
     ways_to_go = [d for d in turns + [ghost.direction] if can_move(world, ghost.pos, d)]
-    direction = ghost.direction
     if len(ways_to_go) == 0:
         direction = direction_back(ghost.direction)
     elif len(ways_to_go) == 1:
@@ -275,6 +274,7 @@ class World:
 
         if cell == POWER_PILL:
             self.laman.vitality = 127 * 20
+            self.laman.ghosts_eaten = 0
             for g in self.ghosts:
                 g.vitality = GHOST_FRIGHTENED
 
@@ -283,11 +283,6 @@ class World:
             self.map = copy.deepcopy(self.map)
             self.map[pos[0]][pos[1]] = EMPTY
 
-        if cell == POWER_PILL:
-            self.laman.ghosts_eaten = 0
-
-        # FIXME: this might be an error: we're checking ghosts before they moved.
-        # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
         ghosts_here = [g for g in self.ghosts if self.laman.pos == g.pos and g.vitality != GHOST_INVISIBLE]
 
         if self.laman.vitality:
