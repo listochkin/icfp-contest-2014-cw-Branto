@@ -25,3 +25,4 @@ build/Release
 # node_modules
 *.node
 code/lisp/packman.bak
+code/src/emulator/*.png
