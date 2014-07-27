@@ -1,4 +1,5 @@
 from laman import *
+from ai import *
 from laman_tests import TestCase, to_world
 
 
@@ -26,7 +27,7 @@ class AiTest(TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, DOWN)
+        self.assertDirectionEquals(DOWN, action)
 
         world = to_world([
             '# #',
@@ -35,7 +36,7 @@ class AiTest(TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, RIGHT)
+        self.assertDirectionEquals(RIGHT, action)
 
         world = to_world([
             '# #',
@@ -44,7 +45,7 @@ class AiTest(TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, LEFT)
+        self.assertDirectionEquals(LEFT, action)
 
     def test_run_from_ghost(self):
         world = to_world([
@@ -54,17 +55,17 @@ class AiTest(TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, DOWN)
+        self.assertDirectionEquals(DOWN, action)
 
         world = to_world([
             '#D#',
             'o@R',
             '# #'
         ])
-        world.laman.vitality = 200
+        # world.laman.vitality = 200
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, RIGHT)
+        self.assertDirectionEquals(LEFT, action)
 
     def test_some_perspective(self):
         world = to_world([
@@ -72,18 +73,18 @@ class AiTest(TestCase):
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, RIGHT)
+        self.assertDirectionEquals(LEFT, action)
 
         world = to_world([
             ' .@..'
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, LEFT)
+        self.assertDirectionEquals(RIGHT, action)
 
         world = to_world([
             'R.@  '
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
-        self.assertDirectionEquals(action, RIGHT)
+        self.assertDirectionEquals(LEFT, action)

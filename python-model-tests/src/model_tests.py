@@ -79,9 +79,6 @@ class ModelTest(TestCase):
             ],
             to_text(world5))
         self.assertEqual(130*2, world5.utc)
-
-        # FIXME! Move event triggers to World :)))
-
         self.assertEqual(260, world5.laman.score)
         # The difference accumulated should be
         self.assertEqual(127*20-6, world5.laman.vitality)

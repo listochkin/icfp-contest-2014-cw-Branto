@@ -40,6 +40,7 @@ def move_from(position, direction):
         return position[0]+1, position[1]
     if direction == LEFT:
         return position[0], position[1]-1
+    raise ValueError('Wrong direction: '.format(direction))
 
 
 def can_move(world, pos, direction):
@@ -284,40 +285,3 @@ class World:
     def is_fruit_on(self):
         return 127 * 200 <= self.utc < 127 * 280 or 127 * 400 <= self.utc < 127 * 480
 
-
-class AI:
-    def __init__(self, world, _):
-        self.world = world
-        self.eol = 127 * len(self.world.map) * len(self.world.map[0]) * 16
-
-
-def ai_heuristic(world, target_pos):
-    score = cell_score(target_pos, world)
-    score += world.laman.lives * 1000  # depends on how
-    if world.pill_count == 0:
-        score += 10000
-    return cell_score(target_pos, world)
-
-
-def ai_step(ai_self, world):
-    # TODO: Stop by running into walls.
-    new_ai = ai_self
-
-    # Rewind till the decision point
-    while world.next_tick_in() < world.time_loop.tracked[0].ticks_till_next:
-        world = world.next_self(world.next_tick_in())
-
-    actions = [a for a in [UP, DOWN, LEFT, RIGHT] if can_move(world, world.laman.pos, a)]
-    positions = [move_from(world.laman.pos, a) for a in actions]
-    scores = [ai_heuristic(world, p) for p in positions]
-
-    possible_worlds = [ai_heuristic(world.next_self(world.next_tick_in()), p) for p in positions]
-
-    a, _ = max(zip(actions, possible_worlds), key=lambda tpl: tpl[1])
-
-    return new_ai, a
-
-
-def ai_init(world, ignored):
-    ai = AI(world, ignored)
-    return ai, ai_step,
