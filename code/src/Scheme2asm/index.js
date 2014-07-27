@@ -46,28 +46,29 @@ function S2Asm() {
         console.log(z.toString());
     };
     
-    ret._1 = function(name, arg)
+    ret._1 = function(name, arg1)
     {
-        if (arguments.length <= 1) throw name + ' 1 ARG missing!';
-        return name + ' ' + arg;
+        if (arg1 == undefined) throw name + ' 1 ARG missing!';
+        return name + ' ' + arg1;
     }
     
     ret._2 = function(name, arg1, arg2)
     {
-        if (arguments.length <= 1) throw name + ' 1 ARG missing!';
-        if (arguments.length <= 2) throw name + ' 2 ARG missing!';
+        if (arg1 == undefined) throw name + ' 1 ARG missing!';
+        if (arg2 == undefined) throw name + ' 2 ARG missing!';
         return name + ' ' + arg1 + ' ' + arg2;
     }
     
     ret._3 = function(name, arg1, arg2, arg3)
     {
-        if (arguments.length <= 1) throw name + ' 1 ARG missing!';
-        if (arguments.length <= 2) throw name + ' 2 ARG missing!';
-        if (arguments.length <= 3) throw name + ' 2 ARG missing!';
+        if (arg1 == undefined) throw name + ' 1 ARG missing!';
+        if (arg2 == undefined) throw name + ' 2 ARG missing!';
+        if (arg3 == undefined) throw name + ' 3 ARG missing!';
         return name + ' ' + arg1 + ' ' + arg2 + ' ' + arg3;
     }
     
     ret.FCALL = function(name){return ret._1('_FUNC', name);}
+    ret.d       = function(n){return (n>-1)?'# +' + n : '# ' + n;}
     
     ret.ADD     = function()            {return 'ADD';}
     ret.SUB     = function()            {return 'SUB';}
@@ -119,10 +120,10 @@ function S2Asm() {
                 walk(obj[2]);
                 
                 var kEnd = acc.length;
-                var relElse = '# +' + (kElse - kTest + 1);
-                var relEnd  = '# +' + (kEnd - kElse);
-                acc[kTest] = ret.TSEL('# +1', relElse);
-                acc[kElse] = ret.TSEL(relEnd, relEnd);
+                var relElse = kElse - kTest + 1;
+                var relEnd  = kEnd - kElse;
+                acc[kTest] = ret.TSEL(ret.d(1),      ret.d(relElse));
+                acc[kElse] = ret.TSEL(ret.d(relEnd), ret.d(relEnd));
                 return;
             }
             if (obj[0] == 'halt'){return;}
@@ -132,8 +133,22 @@ function S2Asm() {
             if (obj[0] == 'refer-local'){acc.push(ret.LD(0, obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-global'){
                 // pop prev consant --- number of args
-                var n = acc.pop().substr(4);
-                //console.log('WALK F', obj[1], n)
+                var n = parseInt(acc.pop().substr(4));
+                // quick & dirty fix of passing 2 or more args
+                // TODO: fix in ast
+                if (n > 1)
+                {
+                    var delta = n + 2;
+                    acc.push(ret.LDF(ret.d(4)));
+                    acc.push(ret.AP(n));
+                    acc.push(ret.LDC(0));
+                    acc.push(ret.TSEL(ret.d(delta), ret.d(delta)));
+                    for (var i = n-1; i >= 0; --i)
+                    {
+                        acc.push(ret.LD(0, i));
+                    }
+                    acc.push(ret.RTN());
+                }
                 if (obj[1] == 'cons') {acc.push(ret.CONS());return ;}
                 if (obj[1] == 'car') {acc.push(ret.CAR());return ;}
                 if (obj[1] == 'cdr') {acc.push(ret.CDR());return ;}
@@ -160,9 +175,10 @@ function S2Asm() {
         return acc;
     }
 
-    ret.compile = function(chunks, shiftN)
+    ret.compile = function(chunks, shiftN, prettify)
     {
         shiftN = shiftN || 0; // to start program not from 0
+        prettify = prettify || false;
         var prg = {code:[], funcs:{}};
         // gather functions
         for(var k in chunks)
@@ -231,6 +247,20 @@ function S2Asm() {
                     }
                 }
                 prg.code[i] = cmd.join('');
+            }
+        }
+        if (prettify)
+        {
+            for (var i = 0; i < prg.code.length; ++i)
+            {
+                var align = '               ;';
+                prg.code[i] += align.substr(prg.code[i].length) + (shiftN + i);
+            }
+            for (var n in prg.funcs)
+            {
+                var fname = prg.funcs[n].name;
+                var funcStart = prg.funcs[n].start;
+                prg.code[funcStart] += ' @' + fname;
             }
         }
         return prg.code;

@@ -59,7 +59,8 @@ var runCompile= function(code, shiftN){
     return prg;
 }
 
-var code=[  '(define (listn n) (if n (cons n (listn (- 1 n))) 0))',
+var code=[  '(define (listq n acc) (if n (listq (- n 1) (cons n acc)) acc))',
+            '(define (listn n) (listq n 0))',
             '(listn 10)'
             ];
 runCompile(code);
@@ -70,15 +71,20 @@ code.push('(listz 5)');
 // 2) set prefix - storing two constants in stack
 var prg_prefix = ['LDC 111', 'LDC 112'];
 // 3) compile code shifted (it shows warning)
-var prg_uncomplete = runCompile(code, prg_prefix.length);
+var prg_uncomplete = code.map(s2asm.parse);
 // 4) get all parts together + add function chunk
-var prg_chunks = [prg_prefix, prg_uncomplete, s2asm.parse('(define (listz a) (+ 3 a))')];
+var prg_chunks = prg_uncomplete;
+prg_chunks.unshift(prg_prefix);
+prg_chunks.push(s2asm.parse('(define (listz a) (+ 3 a))'));
 // 5) compile again. all must be ok
-var prg = s2asm.compile(prg_chunks);
+var prg = s2asm.compile(prg_chunks,0,true);
 console.log("==============");
 for (var i in prg)
 {
     console.log(prg[i]);
 }
-return prg;
+//return prg;
+
+var str = "(define nil '())";
+s2asm.sampleParse(str);
 
