@@ -60,13 +60,13 @@ class PacmanUI:
     def tick(self):
         try:
             if self.world.is_decision_point():
-                ai = ai_init(self.world, [])
+                ai, ai_step = ai_init(self.world, [])
                 ai, action = ai_step(ai, self.world)
                 self.world = self.world.next_self(next_direction=action)
             else:
                 self.world = self.world.next_self()
         except Exception as e:
-            traceback.print_exception(e)
+            print(traceback.format_exc())
             return
 
         if self.world.laman.game_over:

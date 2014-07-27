@@ -59,7 +59,7 @@ def to_world(text_map):
         row += 1
         map.append(line)
 
-    laman = Laman(0, [laman_row, laman_col], UP, 3, 0)
+    laman = Laman(0, (laman_row, laman_col,), UP, 3, 0)
 
     # TODO
     fruit_status = []
