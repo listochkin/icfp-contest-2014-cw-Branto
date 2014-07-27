@@ -5,7 +5,7 @@ from laman_tests import to_world, to_text
 
 
 CELL_SIZE = 12
-DELAY_MS = 100
+DELAY_MS = 10
 
 
 class PacmanUI:

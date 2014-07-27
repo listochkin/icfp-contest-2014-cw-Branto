@@ -164,6 +164,25 @@ GHOST_SPEEDS = [130, 132, 134, 136]
 GHOST_FRIGHTENED_SPEEDS = [195, 198, 201, 204]
 
 
+def default_ghost_ai(world, ghost):
+    turns = direction_turns(ghost.direction)
+    ways_to_go = [d for d in turns + [ghost.direction] if can_move(world, ghost.pos, d)]
+    direction = ghost.direction
+    if len(ways_to_go) == 0:
+        direction = direction_back(ghost.direction)
+    elif len(ways_to_go) == 1:
+        direction = ways_to_go[0]
+    else:
+        choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
+        direction = min(choices, key=lambda x: x[1]) [0]
+        # if len(choices) > 1:
+        #     choice_names = ','.join([DIRECTION_NAMES[d] for d in ways_to_go])
+        #     dname = DIRECTION_NAMES[self.direction]
+        #     print('Choice point between {}; chose {}'.format(choice_names, dname))
+
+    return direction
+
+
 class Ghost:
     def __init__(self, vitality, pos, direction, index):
         self.vitality = vitality
@@ -172,21 +191,7 @@ class Ghost:
         self.index = index
 
     def next_self(self, delta_time, world=None, **kwargs):
-        turns = direction_turns(self.direction)
-        ways_to_go = [d for d in turns + [self.direction] if can_move(world, self.pos, d)]
-        if len(ways_to_go) == 0:
-            self.direction = direction_back(self.direction)
-        elif len(ways_to_go) == 1:
-            self.direction = ways_to_go[0]
-        else:
-            choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
-            self.direction = min(choices, key=lambda x: x[1]) [0]
-
-            # if len(choices) > 1:
-            #     choice_names = ','.join([DIRECTION_NAMES[d] for d in ways_to_go])
-            #     dname = DIRECTION_NAMES[self.direction]
-            #     print('Choice point between {}; chose {}'.format(choice_names, dname))
-
+        self.direction = default_ghost_ai(world, self)
         return Ghost(self.vitality, move_from(self.pos, self.direction), self.direction, self.index)
 
     def get_update_interval(self, **kwargs):
