@@ -11,7 +11,7 @@ var emulator = require('../../src/emulator'),
     compiler = require('../../src/ghc/compiler');
 
 describe('Sample tests', function () {
-    it.only('should compile a program', function () {
+    it('should compile a program', function () {
         var code = [
             '; consts',
             'fright := 1',
