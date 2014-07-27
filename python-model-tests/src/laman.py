@@ -173,7 +173,7 @@ def default_ghost_ai(world, ghost):
     elif len(ways_to_go) == 1:
         direction = ways_to_go[0]
     else:
-        choices = [(d, manhattan_distance(move_from(self.pos, d), world.laman.pos)) for d in ways_to_go]
+        choices = [(d, manhattan_distance(move_from(ghost.pos, d), world.laman.pos)) for d in ways_to_go]
         direction = min(choices, key=lambda x: x[1]) [0]
         # if len(choices) > 1:
         #     choice_names = ','.join([DIRECTION_NAMES[d] for d in ways_to_go])

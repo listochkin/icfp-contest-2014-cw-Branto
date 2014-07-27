@@ -54,7 +54,8 @@ class PacmanUI:
                 self.world = self.world.next_self(next_direction=action)
             else:
                 self.world = self.world.next_self()
-        except:
+        except Exception as e:
+            print('Errora trapylasya: {}'.format(e))
             return
 
         # self.update_world()
