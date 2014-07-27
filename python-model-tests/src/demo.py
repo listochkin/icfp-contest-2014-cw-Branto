@@ -1,18 +1,84 @@
+from tkinter import *
 from laman import *
 from ai import *
 from laman_tests import to_world, to_text
 
 
+CELL_SIZE = 12
+DELAY_MS = 100
+
+
+class PacmanUI:
+    def __init__(self, world):
+        self.master = Tk()
+        self.w = Canvas(self.master, width=len(world.map[0])*CELL_SIZE, height=len(world.map)*CELL_SIZE)
+        self.w.pack()
+        self.mobs_dict = {}
+        self.world = world
+        self.initial_draw()
+
+    def pos_to_coords(self, pos):
+        return pos[1]*CELL_SIZE, pos[0]*CELL_SIZE
+
+    def initial_draw(self):
+        self.mobs_dict = {
+            ghost.index: self.w.create_text(ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE, text='G')
+            for ghost in self.world.ghosts
+        }
+        self.mobs_dict[0] = self.w.create_text(
+            self.world.laman.pos[1]*CELL_SIZE, self.world.laman.pos[0]*CELL_SIZE, text='@')
+        for r in range(len(self.world.map)):
+            for c in range(len(self.world.map[0])):
+                cell = self.world.map[r][c]
+                if cell == WALL:
+                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='#')
+                elif cell == PILL:
+                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='.')
+                elif cell == POWER_PILL:
+                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='o')
+                elif cell == FRUIT_LOCATION and world.is_fruit_on():
+                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='%')
+
+    def update_world(self):
+        for i, text in self.mobs_dict.items():
+            pos = self.world.time_loop.tracked[i].mortal.pos
+            self.w.coords(text, pos[1]*CELL_SIZE, pos[0]*CELL_SIZE)
+
+    def tick(self):
+
+        if self.world.is_decision_point():
+            ai = ai_init(self.world, [])
+            ai, action = ai_step(ai, self.world)
+            self.world = self.world.next_self(next_direction=action)
+        else:
+            self.world = self.world.next_self()
+
+        # self.update_world()
+        self.w.delete('all')
+        self.initial_draw()
+        self.master.after(DELAY_MS, self.tick)
+
+    def run(self):
+        self.master.after(DELAY_MS, self.tick)
+        mainloop()
+
+
 if __name__ == '__main__':
+
     with open('../../code/data/maps/1.map') as f:
         map = f.readlines()
 
     world = to_world(map)
     ai = ai_init(world, [])
 
+    ui = PacmanUI(world)
+    ui.run()
+
+    exit(0)
+
     while True:
         print('\n'.join(to_text(world)))
-        print('Time: {}\tScore: {}\n'.format(world.utc, world.laman.score))
+        print('Time: {}\tScore: {}\tLives: {}\n'.format(world.utc, world.laman.score, world.laman.lives))
         action = None
         if world.is_decision_point():
             ai, action = ai_step(ai, world)
