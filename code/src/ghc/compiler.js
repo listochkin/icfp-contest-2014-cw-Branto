@@ -23,7 +23,9 @@ function compiler(code) {
 
     return ghc.join('\n');
 }
-
+// Register use
+// a, b, c, d .. - return variables
+// h - callstack address (starts at 0)
 var registers = 'abcdefgh'.split('');
 
 var prelude = {
@@ -42,6 +44,9 @@ var prelude = {
     mode: function (id) {
         return ['MOV a, %' + id, 'INT 6']
     },
+    map: function (x, y) {
+        return ['MOV a, %' + x, 'MOV b, %' + y, 'INT 7']
+    },
     go: function (direction) {
         return ['MOV a, %' + direction, 'INT 0']
     },
@@ -50,11 +55,25 @@ var prelude = {
     }
 }
 
+var callSites = {
+    // func: n
+}
+
+function callLabel(func) {
+    if (!(func in callSites)) {
+        callSites[func] = 0;
+    }
+    var label = 'call-' + func + '-' + callSites[func];
+    callSites[func] += 1;
+    return label;
+}
+
 function codeFor (func, args) {
     if (func in prelude) {
         return prelude[func].apply(null, args);
     } else {
-        return ['JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')' ]
+        var label = callLabel(func);
+        return ['MOV [h], %' + label + '+1 ; call', 'INC h' , label + ': JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')' ]
         // throw new Error('Unimplemented: ' + func);
     }
 }
@@ -63,18 +82,19 @@ function compileLine(line, index, variables, labels) {
     var fragments = null,
         code = [],
         assignment = false,
+        label = null,
         vars = null,
         func = null,
         args = [];
 
-    // if (/:[^=]/.test(line)) { // labels
-    //     fragments = line.split(':');
-    //     var label = fragments[0].trim();
-    //     fragments.shift();
+    if (/:[^=]/.test(line)) { // labels
+        fragments = line.split(':');
+        label = fragments[0].trim();
+        fragments.shift();
 
-    //     line = fragments.join(':');
-    //     labels[label] = index;
-    // }
+        line = fragments.join(':');
+        labels[label] = index;
+    }
 
     if (/:=/.test(line)) { // assignment
         var assignment = true;
@@ -100,8 +120,6 @@ function compileLine(line, index, variables, labels) {
                 code.push('MOV %' + vara + ', ' + registers[index]);
             })
         }
-
-        return code;
     } else {
         args = line.split(',');
         if (assignment) {
@@ -109,8 +127,23 @@ function compileLine(line, index, variables, labels) {
                 code.push('MOV %' + vara + ', %' + args[index])
             })
         }
-        return code;
     }
 
-    throw new Error('Unimplemented Case: ' + line);
+    if (label) {
+        // support return
+        var r = /end-(\w+)/.exec(label);
+        if (r && r[1]) {
+            code = code.concat([
+                'DEC h',
+                'JEQ [h], 1, 1 ; return'
+            ]);
+        }
+        code[0] = label + ': ' + code[0];
+    }
+
+    if (code.length === 0) {
+        throw new Error('Unimplemented Case: ' + line);
+    } else {
+        return code;
+    }
 }

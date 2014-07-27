@@ -1,7 +1,7 @@
 'use strict';
 
 var chai = require('chai');
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 var assert = chai.assert;
 
 var path = require('path'),
@@ -22,11 +22,12 @@ describe('Sample tests', function () {
             'myPosX, myPosY := pos(me)',
             'targetX, targetY := pacman(1)',
             'myMode := mode(me)',
-            'ifEqual(myMode, fright, runaway, myPos, target)',
+            // 'ifEqual(myMode, fright, runaway, myPos, target)',
+            'tile := map(0, 0)',
             'dir := findWay(myPosX, myPosY, targetX, targetY)',
             'go(dir)',
             'done()',
-            'findWay: ; start',
+            'findWay: a := 0 ; start',
             'end-findWay: a := 1'
         ].join('\n');
 
@@ -34,6 +35,8 @@ describe('Sample tests', function () {
 
         console.log('------');
         console.log(ghc);
+        console.log('-------');
+        console.log(ghc.split('\n').length);
     });
 
 });
