@@ -101,5 +101,6 @@ class WaveTest(TestCase):
             '###    ',
         ])
 
+        self.assertEqual(0, wave_distance(world, (0,1), (0,1)))
         self.assertEqual(1, wave_distance(world, (0,1), (1,1)))
         self.assertEqual(16, wave_distance(world, (0,1), (3,4)))

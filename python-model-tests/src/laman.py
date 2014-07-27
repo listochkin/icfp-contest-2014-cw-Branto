@@ -211,6 +211,7 @@ class World:
         self.map = map
         self.fruit_status = fruit_status
 
+        self.ghost_starts = []
         self.utc = 0
         self.level = int(len(map) * len(map[0]) / 100)
         self.pill_count = 0
@@ -220,7 +221,11 @@ class World:
                 if c in [PILL, POWER_PILL]:
                     self.pill_count += 1
                 if c == LAMAN_START:
-                    self.laman_start = (i, j)
+                    self.laman_start = (i, j,)
+                elif c == GHOST_START:
+                    self.ghost_starts.append((i, j,))
+                elif c == FRUIT_LOCATION:
+                    self.fruit_location = (i, j,)
 
         self.time_loop = loop or Loop()
         if laman:
@@ -262,6 +267,11 @@ class World:
 
         self.laman.score += cell_score(pos, self)
         self.laman.vitality = max(self.laman.vitality - delta_time, 0)
+        if self.laman.vitality == 0:
+            for g in self.ghosts:
+                if g.vitality != GHOST_STANDARD:
+                    g.vitality = GHOST_STANDARD
+                    g.pos = self.ghost_starts[g.index]
 
         if cell == POWER_PILL:
             self.laman.vitality = 127 * 20
@@ -278,13 +288,14 @@ class World:
 
         # FIXME: this might be an error: we're checking ghosts before they moved.
         # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
-        ghosts_here = [g for g in self.ghosts if self.laman.pos == g.pos]
+        ghosts_here = [g for g in self.ghosts if self.laman.pos == g.pos and g.vitality != GHOST_INVISIBLE]
 
         if self.laman.vitality:
             for g in ghosts_here:
                 self.laman.score += self.laman.ghost_score()
                 self.laman.ghosts_eaten += 1
                 g.vitality = GHOST_INVISIBLE
+                g.pos = self.ghost_starts[g.index]
 
         active_ghosts = [g for g in ghosts_here if g.vitality == GHOST_STANDARD]
         if active_ghosts:
@@ -292,6 +303,9 @@ class World:
             if self.laman.lives > 0:
                 self.laman.game_over = False
                 self.laman.pos = self.laman_start
+            else:
+                self.laman.game_over = True
+
             if self.laman.lives < 0:
                 raise AssertionError('Should never be here')
 

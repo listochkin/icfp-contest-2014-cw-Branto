@@ -1,10 +1,11 @@
 from tkinter import *
+import traceback
 from laman import *
 from ai import *
 from laman_tests import to_world, to_text
 
 
-CELL_SIZE = 12
+CELL_SIZE = 22
 DELAY_MS = 10
 
 
@@ -12,6 +13,7 @@ class PacmanUI:
     def __init__(self, world):
         self.master = Tk()
         self.w = Canvas(self.master, width=len(world.map[0])*CELL_SIZE, height=len(world.map)*CELL_SIZE)
+        self.w.configure(background='black')
         self.w.pack()
         self.mobs_dict = {}
         self.world = world
@@ -20,25 +22,26 @@ class PacmanUI:
     def pos_to_coords(self, pos):
         return pos[1]*CELL_SIZE, pos[0]*CELL_SIZE
 
+    def mktext(self, pos, text, color='white'):
+        return self.w.create_text(pos[1]*CELL_SIZE, pos[0]*CELL_SIZE, text=text, font=("Arial", 17), fill=color)
+
     def initial_draw(self):
         self.mobs_dict = {
-            ghost.index: self.w.create_text(
-                ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE, text='Ggi'[ghost.vitality])
+            ghost.index: self.mktext(ghost.pos, 'Ggi'[ghost.vitality], 'green')
             for ghost in self.world.ghosts
         }
-        self.mobs_dict[0] = self.w.create_text(
-            self.world.laman.pos[1]*CELL_SIZE, self.world.laman.pos[0]*CELL_SIZE, text='@')
+        self.mobs_dict[0] = self.mktext(self.world.laman.pos, '@', 'yellow')
         for r in range(len(self.world.map)):
             for c in range(len(self.world.map[0])):
                 cell = self.world.map[r][c]
                 if cell == WALL:
-                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='#')
+                    self.mktext((r,c,), '#', 'blue')
                 elif cell == PILL:
-                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='.')
+                    self.mktext((r,c,), '.', 'cyan')
                 elif cell == POWER_PILL:
-                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='o')
+                    self.mktext((r,c,), 'o', 'cyan')
                 elif cell == FRUIT_LOCATION and world.is_fruit_on():
-                    self.w.create_text(c*CELL_SIZE, r*CELL_SIZE, text='%')
+                    self.mktext((r,c,), '%', 'red')
 
     def update_world(self):
         for i, text in self.mobs_dict.items():
@@ -55,7 +58,10 @@ class PacmanUI:
             else:
                 self.world = self.world.next_self()
         except Exception as e:
-            print('Errora trapylasya: {}'.format(e))
+            traceback.print_exception(e)
+            return
+
+        if self.world.laman.game_over:
             return
 
         # self.update_world()
