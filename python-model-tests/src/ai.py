@@ -2,6 +2,31 @@ import math
 from laman import *
 
 
+def wave_distance(world, pos1, pos2):
+    """
+    Computes a labyrinth distance from pos to pos2 using A* wave.
+    """
+    wavefront = [pos1]
+    distances_to = {pos1: 0}
+    i = 0
+    while True:
+        next_wavefront = []
+        for p in wavefront:
+            for d in [UP, DOWN, LEFT, RIGHT]:
+                if can_move(world, p, d):
+                    next_pos = move_from(p, d)
+                    if next_pos not in distances_to:
+                        i += 1
+                        next_wavefront.append(next_pos)
+                        distances_to[next_pos] = distances_to[p]+1
+                        if next_pos == pos2:
+                            # print("Wave computed in {} steps".format(i))
+                            return distances_to[next_pos]
+        wavefront = next_wavefront
+        if not next_wavefront:
+            return None
+
+
 class AI:
     def __init__(self, world, _):
         self.world = world
@@ -19,7 +44,8 @@ def ai_heuristic(world, target_pos):
 
     ghost_score = 0
     for g in world.ghosts:
-        distance = manhattan_distance(world.laman.pos, g.pos)
+        # distance = manhattan_distance(world.laman.pos, g.pos)
+        distance = wave_distance(world, world.laman.pos, g.pos)
         if distance == 0:
             ghost_score += 2000
         elif distance < 3:

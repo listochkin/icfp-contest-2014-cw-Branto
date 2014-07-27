@@ -23,8 +23,7 @@ class PacmanUI:
     def initial_draw(self):
         self.mobs_dict = {
             ghost.index: self.w.create_text(
-                ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE,
-                text='Ggi'[ghost.vitality])
+                ghost.pos[1]*CELL_SIZE, ghost.pos[0]*CELL_SIZE, text='Ggi'[ghost.vitality])
             for ghost in self.world.ghosts
         }
         self.mobs_dict[0] = self.w.create_text(

@@ -88,3 +88,18 @@ class AiTest(TestCase):
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)
         self.assertDirectionEquals(LEFT, action)
+
+
+class WaveTest(TestCase):
+    def test_wave_distance(self):
+        world = to_world([
+            '# #####',
+            '#      ',
+            '# #### ',
+            '# #  # ',
+            '# # ## ',
+            '###    ',
+        ])
+
+        self.assertEqual(1, wave_distance(world, (0,1), (1,1)))
+        self.assertEqual(16, wave_distance(world, (0,1), (3,4)))
