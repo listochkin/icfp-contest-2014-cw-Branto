@@ -40,7 +40,7 @@ def move_from(position, direction):
         return position[0]+1, position[1]
     if direction == LEFT:
         return position[0], position[1]-1
-    raise ValueError('Wrong direction: '.format(direction))
+    raise ValueError('Wrong direction: {}'.format(direction))
 
 
 def can_move(world, pos, direction):
@@ -146,7 +146,7 @@ class Laman:
     def ghost_score(self):
         return GHOST_SCORES[-1] if self.ghosts_eaten > 4 else GHOST_SCORES[self.ghosts_eaten]
 
-    def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
+    def next_self(self, delta_time, next_direction=None, **kwargs):
         pos = move_from(self.pos, next_direction)
         result = Laman(self.vitality, pos, next_direction, self.lives, self.score)
         return result
@@ -216,9 +216,11 @@ class World:
     def next_tick_in(self):
         return self.time_loop.next_tick_in()
 
-    def next_self(self, delta_time=None, **kwargs):
-        if not delta_time:
-            delta_time = self.next_tick_in()
+    def is_decision_point(self):
+        return self.next_tick_in() == self.time_loop.tracked[0].ticks_till_next
+
+    def next_self(self, **kwargs):
+        delta_time = self.next_tick_in()
 
         result = World(self.map, copy.deepcopy(self.laman), copy.deepcopy(self.ghosts), self.fruit_status, None)
 

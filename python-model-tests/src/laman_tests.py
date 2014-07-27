@@ -42,7 +42,7 @@ def to_world(text_map):
     for text_line in text_map:
         col = 0
         line = []
-        for c in text_line:
+        for c in text_line.strip('\n\r'):
             line.append(text_map_chars[c])
             if c == '\\' or c == '@':  # convenience
                 laman_row = row
