@@ -147,26 +147,7 @@ class Laman:
 
     def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
         pos = move_from(self.pos, next_direction)
-
-        cell = world.map_at(pos)
-        score = self.score + cell_score(pos, world)
-        vitality = self.vitality
-
-        if cell == POWER_PILL:
-            vitality = 127 * 20
-            for g in world.ghosts:
-                g.vitality = GHOST_FRIGHTENED
-
-        if cell in [PILL, POWER_PILL]:
-            # no other reason to duplicate a map
-            world.map = copy.deepcopy(world.map)
-            world.map[pos[0]][pos[1]] = EMPTY
-
-        result = Laman(vitality, pos, next_direction, self.lives, score)
-
-        if cell == POWER_PILL:
-            result.ghosts_eaten = 0
-
+        result = Laman(self.vitality, pos, next_direction, self.lives, self.score)
         return result
 
     def get_update_interval(self, world=None, **kwargs):
@@ -250,13 +231,30 @@ class World:
         result.ghosts = entries[1:]
         result.time_loop = next_loop
 
-        result.update_collisions(delta_time)
+        result.update_after_move(delta_time)
 
         return result
 
-    def update_collisions(self, delta_time):
+    def update_after_move(self, delta_time):
 
+        pos = self.laman.pos
+        cell = self.map_at(pos)
+
+        self.laman.score += cell_score(pos, self)
         self.laman.vitality = max(self.laman.vitality - delta_time, 0)
+
+        if cell == POWER_PILL:
+            self.laman.vitality = 127 * 20
+            for g in self.ghosts:
+                g.vitality = GHOST_FRIGHTENED
+
+        if cell in [PILL, POWER_PILL]:
+            # no other reason to duplicate a map
+            self.map = copy.deepcopy(self.map)
+            self.map[pos[0]][pos[1]] = EMPTY
+
+        if cell == POWER_PILL:
+            self.laman.ghosts_eaten = 0
 
         # FIXME: this might be an error: we're checking ghosts before they moved.
         # Let's hope La-Man doesn't run into them during their matching tick (which happens pretty rarely).
