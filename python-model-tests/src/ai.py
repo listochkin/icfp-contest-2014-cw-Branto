@@ -6,6 +6,8 @@ def wave_distance(world, pos1, pos2):
     """
     Computes a labyrinth distance from pos to pos2 using A* wave.
     """
+    if pos1 == pos2:
+        return 0
     wavefront = [pos1]
     distances_to = {pos1: 0}
     # i = 0
@@ -24,7 +26,7 @@ def wave_distance(world, pos1, pos2):
                             return distances_to[next_pos]
         wavefront = next_wavefront
         if not next_wavefront:
-            return None
+            raise AssertionError('Could not find path from {} to {}'.format(pos1, pos2))
 
 
 class AI:
