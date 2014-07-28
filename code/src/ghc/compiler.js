@@ -217,8 +217,19 @@ function compileLine(line, index, variables, labels) {
     } else {
         args = line.split(',');
         if (assignment) {
-            vars.map(function (vara, index) {
-                code.push('MOV %' + vara + ', %' + args[index])
+            vars.map(function (v, index) {
+                var r = /(.+)([\+\-\*])(.+)/.exec(args[index]);
+                if (r) {
+                    code.push('MOV %' + v + ', %' + r[1].trim() + ' ; ' + args[index]);
+                    switch (r[2]) {
+                        case '+': code.push('ADD %' + v + ', %' + r[3].trim()); break;
+                        case '-': code.push('SUB %' + v + ', %' + r[3].trim()); break;
+                        case '*': code.push('MUL %' + v + ', %' + r[3].trim()); break;
+                        default: code.push('; Unimplemented ' + args[index]);
+                    }
+                } else {
+                    code.push('MOV %' + v + ', %' + args[index])
+                }
             })
         }
     }
