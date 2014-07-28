@@ -1,7 +1,8 @@
 'use strict';
 
-var BiwaScheme = require("biwascheme"); 
-
+var BiwaScheme = require("biwascheme"),
+    path = require('path'),
+    fs = require('fs');
 
 module.exports = S2Asm;
 
@@ -46,6 +47,33 @@ function S2Asm() {
         console.log(z.toString());
     };
     
+    ret.readFile2src = function(fileName)
+    {
+        var src = fs.readFileSync(fileName, 'utf8');
+        var lines = src.split('\n');
+        var l2 = [];
+        var acc = '';
+        lines.forEach(function (line) {
+            line = line.split(';')[0]; // strip comments
+            
+            if (!line.trim().length) { // empty line
+                if (acc.length > 0)
+                {
+                    l2.push(acc);
+                    acc = '';                    // start new line
+                }
+            } else {
+                acc += ' ' + line;
+            }
+        });
+        if (acc.length > 0)
+        {
+            l2.push(acc);
+        }
+        return l2;
+    }
+
+    
     ret._1 = function(name, arg1)
     {
         if (arg1 == undefined) throw name + ' 1 ARG missing!';
@@ -85,6 +113,8 @@ function S2Asm() {
     ret.RTN     = function()            {return 'RTN';}
     ret.AP      = function(arg1)        {return ret._1('AP', arg1);}
     ret.TSEL    = function(arg1, arg2)  {return ret._2('TSEL', arg1, arg2);}
+    
+    ret.ATOM    = function()            {return 'ATOM';}
 
     ret.parse = function(str)
     {
@@ -132,6 +162,9 @@ function S2Asm() {
             if (obj[0] == 'constant'){acc.push(ret.LDC(obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-local'){acc.push(ret.LD(0, obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-global'){
+                // nil is special constant
+                if (obj[1] == 'nil') {acc.push(ret.LDC(0)); return walk(obj[2]);}
+                
                 // pop prev consant --- number of args
                 var n = parseInt(acc.pop().substr(4));
                 // quick & dirty fix of passing 2 or more args
@@ -161,6 +194,9 @@ function S2Asm() {
                 // logic
                 if (obj[1] == '=') {acc.push(ret.CEQ());return ;}
                 if (obj[1] == '>') {acc.push(ret.CGT());return ;}
+                
+                // nil & ATOM
+                if (obj[1] == 'ATOM') {acc.push(ret.ATOM()); return;}
 
                 //throw 'UNKNOWN FUNC "' + obj[1] + '" !';
                 acc.push(ret.LDF('#' + obj[1]));

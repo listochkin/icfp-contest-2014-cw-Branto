@@ -1,8 +1,17 @@
-(define nil '())
+
+; -----------------------------------------
+; --- this has no effects in compiled code
+
+(define nil 0)
+
+(define (ATOM arg)(= 0 arg))
+
+; ^^^ this has no effects in compiled code
+; -----------------------------------------
 
 ; null check
 (define (null? arg)
-  (= nil arg))
+  (ATOM arg))
 
 ; returns n-th element of the list
 (define (list-ref items n)
@@ -48,12 +57,12 @@
           point
           (next-point world-map point direction)))))
 
-;; builds a list of pairs of move direction and corresponding score
-; (define (make-move-score-list world-map point)
-;   (cons (cons 0 (move-score world-map point 0))
-;         (cons (cons 1 (move-score world-map point 1))
-;               (cons (cons 2 (move-score world-map point 2))
-;                     (cons (cons 3 (move-score world-map point 3)) nil)))))
+; builds a list of pairs of move direction and corresponding score
+ (define (make-move-score-list world-map point)
+   (cons (cons 0 (move-score world-map point 0))
+         (cons (cons 1 (move-score world-map point 1))
+               (cons (cons 2 (move-score world-map point 2))
+                     (cons (cons 3 (move-score world-map point 3)) nil)))))
 
 ;; selects the move with the highest score
 (define (best-move move-scores-list best-pair)
@@ -67,9 +76,9 @@
           pair2)))
 
 
-; (define (tick-world world-map point)
-;   (best-move (make-move-score-list world-map point) nil))
+(define (tick-world world-map point)
+   (best-move (make-move-score-list world-map point) nil))
 
 ;AI step for packman
-; (define (step-map ai-state world-state)
-;   (cons 0 (car (tick-world (list-ref world-state 0) (matrix-ref world-state 1 1)))))
+ (define (step-map ai-state world-state)
+   (cons 0 (car (tick-world (list-ref world-state 0) (matrix-ref world-state 1 1)))))

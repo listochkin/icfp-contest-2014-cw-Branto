@@ -18,8 +18,8 @@ describe('Sample tests', function () {
         var s2asm = (new Scheme2asm());
 
         var code = [
-            '(define (listn n) (if n (cons n (listn (- 1 n))) 0))',
-            '(listn 10)'
+            '(define (listn n) (if n (cons n (listn (- n 1))) 0))',
+            '(cons (listn 10) 1)'
         ];
 
         // minimal main function
@@ -43,31 +43,17 @@ describe('Sample tests', function () {
     });
 
     it('should eval Racket code', function () {
-        var src = fs.readFileSync(path.join(__dirname, '../../data/pacmans/2.gcc'), 'utf8');
-        var lines = src.split('\n');
-        var l2 = [[]];
 
-        lines.forEach(function (line) {
-            if (!line.length) { // empty line
-                l2.push([]); // start new line
-            } else {
-                line = line.split(';')[0]; // strip comments
-                l2[l2.length - 1].push(line);
-            }
-        });
-        var code = l2.map(function (lineFragments) {
-            return lineFragments.join(' ').replace(/\s{2,}/g, ' ').trim();
-        }).filter(function (line) {
-            return line.length > 0;
-        });
-
-        // console.log(code);
+        this.timeout(1500);
         var s2asm = (new Scheme2asm());
 
+        var code = s2asm.readFile2src(path.join(__dirname, '../../data/pacmans/2.gcc'));
+        //console.log(code);
+
         var ast = code.map(s2asm.parse);
-        // console.log(ast);
-        var gcc = s2asm.compile(ast).join('\n');
-        // console.log(gcc);
+        console.log(ast);
+        var gcc = s2asm.compile(ast, 0, true).join('\n');
+        //console.log(gcc);
 
         assert(gcc.indexOf('#') < 0, 'found unimplemented instruction: ' + gcc.substr(gcc.indexOf('#'), 5))
     });
