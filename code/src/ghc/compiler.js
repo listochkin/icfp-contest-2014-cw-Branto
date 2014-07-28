@@ -133,6 +133,63 @@ var prelude = {
     map: function (x, y) {
         return ['MOV a, %' + x, 'MOV b, %' + y, 'INT 7']
     },
+    ifCanMove: function (tile, check) {
+        return ['call-' + check + ': JGT $' + check.trim() + ', %' + tile + ', 0' ];
+    },
+    minKey: function (up, manhUp, left, manhLeft, down, manhDown, right, manhRight) {
+        return [
+            'JGT $upGtLeft, %manhUp, %manhLeft',
+            // compare with up
+            // [l] > u
+
+            'JGT $upGtDown, %manhUp, %manhDown',
+            // [l, d] > u
+
+            'JGT $upGtRight, %manhUp, %manhRight',
+            // [l, d, r] > u
+            'MOV a, %up',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [l, d, u] > r
+            'upGtRight: MOV a, %right',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [l, u] > d
+            'upGtDown: JGT $downGtRight, %manhDown, %manhRight',
+            // [l, u, r] > d
+            'MOV a, %down',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [l, u, d] > r
+            'downGtRight: MOV a, %right',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [u] > l
+            'upGtLeft: JGT $leftGtDown, %manhLeft, %manhDown',
+
+            // [u, d] > l
+            'JGT $leftGtRight, %manhLeft, %manhRight',
+
+            // [u, d, r] > l
+            'MOV a, %left',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [u, d, l] > r
+            'leftGtRight: MOV a, %right',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [u, l] > d
+            'leftGtDown: JGT $downGtRight, %manhDown, %manhRight',
+
+            // [u, l, r] > d
+            'MOV a, %down',
+            'JEQ $call-minKey+1, 1, 1',
+
+            // [u, l, d] > r
+            'downGtRight: MOV a, %right',
+            'JEQ $call-minKey+1, 1, 1',
+        ];
+    },
     go: function (direction) {
         return ['MOV a, %' + direction, 'INT 0']
     },
