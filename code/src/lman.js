@@ -9,8 +9,11 @@ var code = s2asm.readFile2src(fName);
 var ast = [];
 // to be run in game
 var prefix_lman = [
-'LDC 0',
-'LDF 4',
+'LD 0 0',
+'LD 0 1',
+'LDF #init',
+'AP 2',
+'LDF 7',
 'CONS',
 'RTN',
 'LD 0 0',
