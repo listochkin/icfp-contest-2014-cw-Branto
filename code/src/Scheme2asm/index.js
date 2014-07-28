@@ -159,7 +159,7 @@ function S2Asm() {
             if (obj[0] == 'halt'){return;}
             if (obj[0] == 'return'){acc.push(ret.RTN()); return;}
             if (obj[0] == 'argument'){return walk(obj[1]);}
-            if (obj[0] == 'constant'){acc.push(ret.LDC(obj[1])); return walk(obj[2]);}
+            if (obj[0] == 'constant'){acc.push(ret.LDC(obj[1] == 'nil'?0:obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-local'){acc.push(ret.LD(0, obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-global'){
                 // nil is special constant

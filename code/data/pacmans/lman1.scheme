@@ -1,0 +1,78 @@
+
+; -----------------------------------------
+; --- this has no effects in compiled code
+
+(define nil 0)
+
+(define (ATOM arg)(= 0 arg))
+
+; ^^^ this has no effects in compiled code
+; -----------------------------------------
+
+; null check
+(define (null? arg)
+  (ATOM arg))
+
+; returns n-th element of the list
+(define (list-ref items n)
+   (if (= n 0)
+      (car items)
+      (list-ref (cdr items) (- n 1))))
+
+;returns element at the specified location of the matrix
+(define (matrix-ref matrix point)
+  (list-ref (list-ref matrix (cdr point)) (car point)))
+
+
+;; returns coordinats of the adjustent point in the given direction
+(define (next-point world-map current-point direction)
+   (if (= direction 0) (cons (car current-point) (- (cdr current-point) 1))
+       (if (= direction 1) (cons (+ (car current-point) 1) (cdr current-point))
+           (if (= direction 2) (cons (car current-point) (+ (cdr current-point) 1))
+               (if (= direction 3) (cons (- (car current-point) 1) (cdr current-point))
+                   nil)))))
+
+
+; return world map from world-state
+(define (get-world-map world-state)
+    (car world-state))
+
+; return pacman position pair
+(define (get-pacman-pos world-state)
+    (car (cdr world-state)))
+
+
+; move-cycle
+(define (move-cycle move) 
+    (if (= 3 move) 0 (+ move 1)))
+
+; choose next move
+(define (next-move world-map pacman-pos try-move)
+    (if (= 0 (matrix-ref world-map (next-point world-map pacman-pos try-move)))
+        (next-move world-map pacman-pos (move-cycle try-move))
+        try-move))
+
+(define (dup-pair a) (cons a a))
+
+
+;; test step function - remove from final run
+(define (test-step)
+    (step
+        0
+        (cons   
+            (cons       ; map
+                (cons 0 (cons 0 1))
+            (cons
+                (cons 1 (cons 0 1))
+                (cons 0 (cons 1 0))
+            ))
+            (cons       ; lambdaman
+                100         ; vitality
+                (cons 1 1)  ; pos
+            )
+        )
+        ))
+
+;AI step for packman
+ (define (step ai-state world-state)
+   (dup-pair (next-move () () ai-state))
