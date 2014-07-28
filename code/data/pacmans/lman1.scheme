@@ -25,7 +25,7 @@
 
 
 ;; returns coordinats of the adjustent point in the given direction
-(define (next-point world-map current-point direction)
+(define (next-point current-point direction)
    (if (= direction 0) (cons (car current-point) (- (cdr current-point) 1))
        (if (= direction 1) (cons (+ (car current-point) 1) (cdr current-point))
            (if (= direction 2) (cons (car current-point) (+ (cdr current-point) 1))
@@ -46,38 +46,64 @@
 (define (move-cycle move) 
     (if (= 3 move) 0 (+ move 1)))
 
+;pills, power pills, fruits
+(define (content-score content)
+   (if (= content 0) 0                  ; walls
+        (if (= content 2) 10
+            (if (= content 3) 50
+                (if (= content 4) 100
+                    1)))))              ; all other content
+
+;; evaluate score of a move in the specified direction
+(define (move-score world-map point direction bonus)
+   (+ bonus
+  (content-score
+    (matrix-ref world-map (next-point point direction)))))
+
+
+; choose best. acc is a pair (move score)
+(define (next-move-best n acc world-map pacman-pos try-move old-move)
+    (if (= 0 n) (car acc)
+        (if (>  (cdr acc) (move-score world-map pacman-pos try-move (= try-move old-move)))
+            (next-move-best (- n 1) acc world-map pacman-pos (move-cycle try-move) old-move)
+            (next-move-best (- n 1) 
+                        (cons try-move (move-score world-map pacman-pos try-move (= try-move old-move)))
+                                        world-map pacman-pos (move-cycle try-move) old-move)
+        )
+    )
+    )
+
 ; choose next move
 (define (next-move world-map pacman-pos try-move)
-    (if (= 0 (matrix-ref world-map (next-point world-map pacman-pos try-move)))
-        (next-move world-map pacman-pos (move-cycle try-move))
-        try-move))
+    (next-move-best 4 (cons try-move 0) world-map pacman-pos try-move try-move)
+    )
 
 (define (dup-pair a) (cons a a))
 
-
 ;; test step function - remove from final run
-;(define (test-step)
-;    (step
-;        0
-;        (cons   
-;            (cons       ; map
-;                (cons 0 (cons 0 1))
-;            (cons
-;                (cons 1 (cons 1 1))
-;                (cons 0 (cons 1 0))
-;            ))
-;            (cons (cons       ; lambdaman
-;                    100         ; vitality
-;                (cons
-;                    (cons 1 1)  ; pos
-;                    0
-;                ))
-;            0
-;            ))
-;            
-;        )
-;        )
+(define (test-step)
+    (step
+        0
+        (cons   
+            (cons       ; map
+                (cons 0 (cons 0 1))
+            (cons
+                (cons 1 (cons 1 1))
+                (cons 0 (cons 1 0))
+            ))
+            (cons
+                (cons
+                    112                     ; !!!stub
+                    (cons
+                        (cons 11 16)
+                        113                 ; !!!stub
+                    )
+                )
+                114                         ; !!!stub
+            )
+        )))
 
 ;AI step for packman
- (define (step ai-state world-state)
+(define (step ai-state world-state)
    (dup-pair (next-move (get-world-map world-state) (get-pacman-pos world-state) ai-state)))
+;(define (step ai-state world-state) (get-pacman-pos world-state))

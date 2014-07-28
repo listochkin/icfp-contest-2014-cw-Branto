@@ -163,6 +163,7 @@ function S2Asm() {
             if (obj[0] == 'refer-local'){acc.push(ret.LD(0, obj[1])); return walk(obj[2]);}
             if (obj[0] == 'refer-global'){
                 // nil is special constant
+                //console.log('GLOBAL:', obj[1]);
                 if (obj[1] == 'nil') {acc.push(ret.LDC(0)); return walk(obj[2]);}
                 
                 // pop prev consant --- number of args
