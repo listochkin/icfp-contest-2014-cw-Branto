@@ -141,16 +141,17 @@ var prelude = {
     }
 }
 
-var callSites = {
-    // func: n
-}
+// turned out that GHC doesn't support dynamic jumps
+// var callSites = {
+//     // func: n
+// }
 
 function callLabel(func) {
-    if (!(func in callSites)) {
-        callSites[func] = 0;
-    }
-    var label = 'call-' + func + '-' + callSites[func];
-    callSites[func] += 1;
+    // if (!(func in callSites)) {
+    //     callSites[func] = 0;
+    // }
+    var label = 'call-' + func; // + '-' + callSites[func];
+    // callSites[func] += 1;
     return label;
 }
 
@@ -163,8 +164,8 @@ function codeFor (func, args) {
             return 'MOV ' + registers[index] + ', %' + arg + (!index ? ' ; params' : '');
         });
         return code.concat([
-            'MOV [h], $' + label + '+1 ; call',
-            'INC h' ,
+            // 'MOV [h], $' + label + '+1 ; call',
+            // 'INC h' ,
             label + ': JEQ $' + func + ', 1, 1 ; <= ' + func + '(' + args + ')'
         ]);
         // throw new Error('Unimplemented: ' + func);
@@ -227,8 +228,9 @@ function compileLine(line, index, variables, labels) {
         var r = /end-(\w+)/.exec(label);
         if (r && r[1]) {
             code = code.concat([
-                'DEC h',
-                'JEQ [h], 1, 1 ; return'
+                // 'DEC h',
+                // 'MOV g, [h]',
+                'JEQ $call-' + r[1] + '+1, 1, 1 ; return'
             ]);
         }
         code[0] = label + ': ' + code[0];
