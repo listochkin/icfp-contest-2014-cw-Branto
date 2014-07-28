@@ -72,7 +72,7 @@ describe('Sample tests', function () {
             // 'myMode := mode(me)',
             // 'ifFright(myMode)',
             'myPosX, myPosY := pos(me)',
-            'targetX, targetY := pacman(1)',
+            'targetX, targetY := pacmanStart(1)',
 
             // init distances:
             'manhUp := 255',
