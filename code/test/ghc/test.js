@@ -72,7 +72,7 @@ describe('Sample tests', function () {
             // 'myMode := mode(me)',
             // 'ifFright(myMode)',
             'myPosX, myPosY := pos(me)',
-            'targetX, targetY := pacman(1)',
+            'targetX, targetY := pacmanStart(1)',
 
             // init distances:
             'manhUp := 255',
@@ -152,5 +152,10 @@ describe('Sample tests', function () {
         fs.writeFileSync(path.join(__dirname, 'ghost.ghc'), ghc, 'utf8');
         console.log('-------');
         console.log(ghc.split('\n').length);
+        ghc.split('\n').filter(function (line) {
+            return line.indexOf('undefined') >= 0;
+        }).forEach(function (line) {
+            console.error(line);
+        });
     });
 });

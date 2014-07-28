@@ -133,6 +133,15 @@ var prelude = {
     map: function (x, y) {
         return ['MOV a, %' + x, 'MOV b, %' + y, 'INT 7']
     },
+    pacmanStart: function (id) {
+        return [
+            'pacmanStart: JLT $pacmanStart+5, %pacmanStartX, 0',
+            'MOV a, %' + id,
+            'INT 1',
+            'MOV %pacmanStartX, a',
+            'MOV %pacmanStartY, b',
+        ]
+    },
     ifCanMove: function (tile, check) {
         return ['call-' + check + ': JGT $' + check.trim() + ', %' + tile + ', 0' ];
     },
