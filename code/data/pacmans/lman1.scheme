@@ -16,7 +16,7 @@
 ; returns n-th element of the list
 (define (list-ref items n)
    (if (= n 0)
-      (car items)
+      (if (ATOM items) items (car items)) ; for tuples!
       (list-ref (cdr items) (- n 1))))
 
 ;returns element at the specified location of the matrix
@@ -39,7 +39,7 @@
 
 ; return pacman position pair
 (define (get-pacman-pos world-state)
-    (car (cdr world-state)))
+    (car (cdr (car (cdr world-state)))))
 
 
 ; move-cycle
@@ -56,23 +56,28 @@
 
 
 ;; test step function - remove from final run
-(define (test-step)
-    (step
-        0
-        (cons   
-            (cons       ; map
-                (cons 0 (cons 0 1))
-            (cons
-                (cons 1 (cons 0 1))
-                (cons 0 (cons 1 0))
-            ))
-            (cons       ; lambdaman
-                100         ; vitality
-                (cons 1 1)  ; pos
-            )
-        )
-        ))
+;(define (test-step)
+;    (step
+;        0
+;        (cons   
+;            (cons       ; map
+;                (cons 0 (cons 0 1))
+;            (cons
+;                (cons 1 (cons 1 1))
+;                (cons 0 (cons 1 0))
+;            ))
+;            (cons (cons       ; lambdaman
+;                    100         ; vitality
+;                (cons
+;                    (cons 1 1)  ; pos
+;                    0
+;                ))
+;            0
+;            ))
+;            
+;        )
+;        )
 
 ;AI step for packman
  (define (step ai-state world-state)
-   (dup-pair (next-move () () ai-state))
+   (dup-pair (next-move (get-world-map world-state) (get-pacman-pos world-state) ai-state)))
