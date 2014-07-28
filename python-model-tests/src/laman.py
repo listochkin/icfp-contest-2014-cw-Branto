@@ -147,7 +147,22 @@ class Laman:
     def ghost_score(self):
         return GHOST_SCORES[-1] if self.ghosts_eaten >= 4 else GHOST_SCORES[self.ghosts_eaten]
 
-    def next_self(self, delta_time, next_direction=None, **kwargs):
+    def possible_directions(self, world):
+        if world.utc == 0:
+            return [LEFT, RIGHT, UP, DOWN]
+        # Let's remove turning back.
+        dirs = [d for d in [self.direction] + direction_turns(self.direction) if can_move(world, self.pos, d)]
+        if len(dirs) == 0:
+            return [direction_back(self.direction)]
+        else:
+            return dirs
+
+    def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
+        if next_direction is None:
+            assert world
+            dirs = self.possible_directions(world=world)
+            assert len(dirs)
+            next_direction = dirs[0]
         pos = move_from(self.pos, next_direction)
         result = Laman(self.vitality, pos, next_direction, self.lives, self.score)
         return result
@@ -238,9 +253,25 @@ class World:
         return self.time_loop.next_tick_in()
 
     def is_decision_point(self):
-        return self.next_tick_in() == self.time_loop.tracked[0].ticks_till_next
+        return self.next_tick_in() == self.time_loop.tracked[0].ticks_till_next and \
+            len(self.laman.possible_directions(self)) > 1
 
-    def next_self(self, **kwargs):
+    def next_self_rewind(self, **kwargs):
+        """
+        Rewind till the decision point
+        """
+        result = self.next_self(**kwargs)
+        i = 0
+        while not result.is_decision_point() and not result.laman.game_over:
+            result = result.next_self(rewind=True, **kwargs)
+            i += 1
+            # Safeguard, if the world leaves no choice - just
+            if i > 100:
+                assert True, "It's impossible to have no choice!"
+                break
+        return result
+
+    def next_self(self, rewind=False, **kwargs):
         delta_time = self.next_tick_in()
 
         result = World(self.map, copy.deepcopy(self.laman), copy.deepcopy(self.ghosts), self.fruit_status, None)

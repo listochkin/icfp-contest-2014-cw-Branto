@@ -4,13 +4,6 @@ from laman_tests import TestCase, to_world, to_text
 
 class ModelTest(TestCase):
 
-    def test_movement(self):
-        world = to_world([
-            '#####',
-            '@.o.L',
-            '#####',
-        ])
-
     def test_collide_ghost(self):
         world = to_world([
             '#..',
@@ -28,7 +21,7 @@ class ModelTest(TestCase):
         self.assertEqual(0, world2b.laman.score)
         self.assertEqual(2, world2b.laman.lives)
 
-    def test_eat_power_pill(self):
+    def test_eat_timings(self):
         world = to_world([
             '#####',
             '@.o.L',
@@ -83,3 +76,39 @@ class ModelTest(TestCase):
         # The difference accumulated should be
         self.assertEqual(127*20-6, world5.laman.vitality)
         self.assertEqual(GHOST_INVISIBLE, world5.ghosts[0].vitality)
+
+    def test_possible_directions(self):
+
+        world = to_world([
+            '## ##',
+            '#@o.L',
+            '#####',
+        ])
+        world.utc = 1
+        world.laman.direction = LEFT
+        self.assertFalse(world.is_decision_point())
+        self.assertEqual([RIGHT], world.laman.possible_directions(world))
+
+        world = to_world([
+            '## ##',
+            '# @.L',
+            '#####',
+        ])
+        world.utc = 1
+        world.laman.direction = RIGHT
+        self.assertTrue(world.is_decision_point())
+        self.assertEqual({RIGHT, UP}, set(world.laman.possible_directions(world)))
+        world.laman.direction = UP
+        self.assertEqual({RIGHT, UP, LEFT}, set(world.laman.possible_directions(world)))
+
+    def test_game_over(self):
+        world = to_world([
+            '## ##',
+            '#@L.L',
+            '#####',
+        ])
+
+        world2 = world.next_self()
+        self.assertFalse(world2.laman.game_over)
+        world3 = world2.next_self()
+        self.assertFalse(world3.laman.game_over)
