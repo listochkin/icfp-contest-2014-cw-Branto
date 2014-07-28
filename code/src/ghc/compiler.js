@@ -21,8 +21,8 @@ function compiler(code) {
 
     llcode = Array.prototype.concat.apply([], llcode);
 
-    // console.log(llcode);
-    var ghc = link(optimize(llcode));
+    // console.log(llcode.join('\n'));
+    var ghc = optimize(link(llcode));
 
     return ghc.join('\n');
 }
