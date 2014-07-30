@@ -69,7 +69,9 @@ class AiTest(TestCase):
 
     def test_some_perspective(self):
         world = to_world([
-            '..@. '
+            '#####',
+            '..@. ',
+            '#####',
         ])
         ai, ai_step = ai_init(world, None)
         ai, action = ai_step(ai, world)

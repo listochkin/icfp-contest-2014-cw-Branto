@@ -107,8 +107,24 @@ class ModelTest(TestCase):
             '#@L.L',
             '#####',
         ])
+        world.laman.direction = UP
 
         world2 = world.next_self()
         self.assertFalse(world2.laman.game_over)
         world3 = world2.next_self()
         self.assertFalse(world3.laman.game_over)
+
+    def test_rewind(self):
+        world = to_world([
+            '.####.',
+            '..@...',
+            '.####.',
+        ])
+
+        world2 = world.next_self(next_direction=LEFT).next_self_rewind()
+        self.assertEqual((1, 0,), world2.laman.pos)
+        self.assertEqual(137*2, world2.utc)
+
+        world2 = world.next_self(next_direction=RIGHT).next_self_rewind()
+        self.assertEqual((1, 5,), world2.laman.pos)
+        self.assertEqual(137*3, world2.utc)

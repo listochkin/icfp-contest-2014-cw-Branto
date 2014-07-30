@@ -148,10 +148,12 @@ class Laman:
         return GHOST_SCORES[-1] if self.ghosts_eaten >= 4 else GHOST_SCORES[self.ghosts_eaten]
 
     def possible_directions(self, world):
-        if world.utc == 0:
-            return [LEFT, RIGHT, UP, DOWN]
+        if self.direction is None:
+            dirs = [LEFT, RIGHT, UP, DOWN]
         # Let's remove turning back.
-        dirs = [d for d in [self.direction] + direction_turns(self.direction) if can_move(world, self.pos, d)]
+        else:
+            dirs = [self.direction] + direction_turns(self.direction)
+        dirs = [d for d in dirs if can_move(world, self.pos, d)]
         if len(dirs) == 0:
             return [direction_back(self.direction)]
         else:
@@ -159,11 +161,16 @@ class Laman:
 
     def next_self(self, delta_time, next_direction=None, world=None, **kwargs):
         if next_direction is None:
+            next_direction = self.direction
+            assert next_direction is not None
             assert world
-            dirs = self.possible_directions(world=world)
-            assert len(dirs)
-            next_direction = dirs[0]
+            if not can_move(world, self.pos, next_direction):
+                dirs = self.possible_directions(world=world)
+                assert len(dirs) == 1
+                next_direction = dirs[0]
         pos = move_from(self.pos, next_direction)
+        if pos[1] < 0 or pos[0] < 0:
+            assert pos[1] >= 0
         result = Laman(self.vitality, pos, next_direction, self.lives, self.score)
         return result
 
@@ -172,7 +179,7 @@ class Laman:
         return 137 if world.map_at(self.pos) in [PILL, POWER_PILL, FRUIT_LOCATION] else 127
 
     def __str__(self):
-        return 'Lambda-Man {}'.format(self.pos)
+        return 'Lambda-Man {}:{}'.format(self.pos, DIRECTION_NAMES[self.direction] if self.direction else 'Nowhere')
 
 
 GHOST_SPEEDS = [130, 132, 134, 136]
@@ -253,8 +260,10 @@ class World:
         return self.time_loop.next_tick_in()
 
     def is_decision_point(self):
-        return self.next_tick_in() == self.time_loop.tracked[0].ticks_till_next and \
-            len(self.laman.possible_directions(self)) > 1
+        nt = self.next_tick_in()
+        lmt = self.time_loop.tracked[0].ticks_till_next
+        d = self.laman.possible_directions(self)
+        return nt == lmt and len(d) > 1
 
     def next_self_rewind(self, **kwargs):
         """
@@ -336,6 +345,8 @@ class World:
                 raise AssertionError('Should never be here')
 
     def map_at(self, pos):
+        if pos[0] < 0 or pos[1] < 0:
+            return WALL
         try:
             return self.map[pos[0]][pos[1]]
         except IndexError:
@@ -344,3 +355,5 @@ class World:
     def is_fruit_on(self):
         return 127 * 200 <= self.utc < 127 * 280 or 127 * 400 <= self.utc < 127 * 480
 
+    def __str__(self):
+        return 'World({}:{} at {})'.format(self.laman, self.laman.score, self.utc)

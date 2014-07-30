@@ -139,7 +139,8 @@ def ai_step(ai_self, world):
     new_ai = ai_self
 
     # Pitfall: LaMan will prefer a long pill-filled corridors without decisions.
-    world = world.next_self_rewind()
+    while not world.is_decision_point():
+        world = world.next_self_rewind()
 
     actions = world.laman.possible_directions(world)
     if len(actions) == 1:
@@ -148,9 +149,14 @@ def ai_step(ai_self, world):
 
     waver = Waver(world)
 
-    possible_world_values = [
-        ai_heuristic(world.next_self(next_direction=d), waver)
+    possible_worlds = [
+        world.next_self(next_direction=d).next_self_rewind(world=world)
         for d in actions
+    ]
+
+    possible_world_values = [
+        ai_heuristic(w, waver)
+        for w in possible_worlds
     ]
     action_values = list(zip(actions, possible_world_values))
 
